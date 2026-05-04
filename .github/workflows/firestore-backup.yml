@@ -1,9 +1,9 @@
-name: Firestore Daily Backup
+name: Firestore Weekly Backup - Thứ 4
 
 on:
   schedule:
-    - cron: '0 2 * * *'        # Chạy lúc 2h sáng UTC (9h sáng VN)
-  workflow_dispatch:           # Cho phép chạy thủ công
+    - cron: '0 5 * * 3'        # 12:00 trưa thứ 4 (Giờ Việt Nam)
+  workflow_dispatch:           # Cho phép chạy thủ công bất kỳ lúc nào
 
 jobs:
   backup:
@@ -21,13 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm install firebase-admin
 
-      - name: Create backup script
+      - name: Create and run backup script
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
         run: |
           cat > backup.js << 'EOF'
           const admin = require("firebase-admin");
           const fs = require("fs");
 
-          // Decode Base64 secret
           const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
           const serviceAccount = JSON.parse(Buffer.from(base64Key, 'base64').toString());
 
@@ -66,30 +67,33 @@ jobs:
           }
 
           async function main() {
+            console.log("🔄 Bắt đầu backup Firestore - ${new Date().toLocaleString('vi-VN')}");
             const backup = {};
             const collections = await db.listCollections();
             
             for (const col of collections) {
-              console.log(`Backing up: ${col.id}`);
+              console.log(`📁 Đang backup: ${col.id}`);
               backup[col.id] = await exportCollection(col);
             }
 
             const date = new Date().toISOString().slice(0,10);
-            fs.writeFileSync(`backup-${date}.json`, JSON.stringify(backup, null, 2));
-            console.log("Backup completed!");
+            const filename = `backup-${date}.json`;
+            fs.writeFileSync(filename, JSON.stringify(backup, null, 2));
+            
+            console.log(`✅ Backup hoàn tất: ${filename}`);
           }
 
-          main().catch(console.error);
+          main().catch(error => {
+            console.error("❌ Lỗi backup:", error);
+            process.exit(1);
+          });
           EOF
 
-      - name: Run Backup
-        env:
-          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
-        run: node backup.js
+          node backup.js
 
-      - name: Upload backup as artifact
+      - name: Upload backup file
         uses: actions/upload-artifact@v4
         with:
           name: firestore-backup
           path: backup-*.json
-          retention-days: 30
+          retention-days: 60   # Giữ backup trong 60 ngày
