@@ -1,0 +1,95 @@
+name: Firestore Daily Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'        # Chạy lúc 2h sáng UTC (9h sáng VN)
+  workflow_dispatch:           # Cho phép chạy thủ công
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install firebase-admin
+
+      - name: Create backup script
+        run: |
+          cat > backup.js << 'EOF'
+          const admin = require("firebase-admin");
+          const fs = require("fs");
+
+          // Decode Base64 secret
+          const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+          const serviceAccount = JSON.parse(Buffer.from(base64Key, 'base64').toString());
+
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+          });
+
+          const db = admin.firestore();
+
+          async function exportCollection(colRef) {
+            const snapshot = await colRef.get();
+            const result = [];
+            for (const doc of snapshot.docs) {
+              const data = { id: doc.id, ...doc.data() };
+              const subCols = await doc.ref.listCollections();
+              for (const subCol of subCols) {
+                data[subCol.id] = await exportSubCollection(subCol);
+              }
+              result.push(data);
+            }
+            return result;
+          }
+
+          async function exportSubCollection(colRef) {
+            const snapshot = await colRef.get();
+            const result = [];
+            for (const doc of snapshot.docs) {
+              const data = { id: doc.id, ...doc.data() };
+              const subCols = await doc.ref.listCollections();
+              for (const subCol of subCols) {
+                data[subCol.id] = await exportSubCollection(subCol);
+              }
+              result.push(data);
+            }
+            return result;
+          }
+
+          async function main() {
+            const backup = {};
+            const collections = await db.listCollections();
+            
+            for (const col of collections) {
+              console.log(`Backing up: ${col.id}`);
+              backup[col.id] = await exportCollection(col);
+            }
+
+            const date = new Date().toISOString().slice(0,10);
+            fs.writeFileSync(`backup-${date}.json`, JSON.stringify(backup, null, 2));
+            console.log("Backup completed!");
+          }
+
+          main().catch(console.error);
+          EOF
+
+      - name: Run Backup
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
+        run: node backup.js
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup
+          path: backup-*.json
+          retention-days: 30
