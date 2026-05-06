@@ -2,17 +2,20 @@ name: Firestore Weekly Backup - Thứ 4
 
 on:
   schedule:
-    - cron: '0 5 * * 3'    # Chạy lúc 12:00 trưa thứ 4 (Giờ Việt Nam - UTC+7)
-  workflow_dispatch:        # Cho phép chạy thủ công
+    - cron: '0 5 * * 3'    # 12:00 trưa thứ 4 (Giờ Việt Nam)
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     
-    # Buộc dùng Node.js 24 để tránh cảnh báo deprecated
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
+      # === Email configuration (bạn cần thêm secrets) ===
+      EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}          # Email nhận backup
 
     steps:
       - name: Checkout code
@@ -33,7 +36,6 @@ jobs:
           const admin = require("firebase-admin");
           const fs = require("fs");
 
-          // Khởi tạo Firebase
           const serviceAccount = JSON.parse(
             Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString()
           );
@@ -47,16 +49,12 @@ jobs:
           async function exportCollection(colRef) {
             const snapshot = await colRef.get();
             const result = [];
-
             for (const doc of snapshot.docs) {
               const data = { id: doc.id, ...doc.data() };
-              
-              // Export subcollections recursively
               const subCols = await doc.ref.listCollections();
               for (const subCol of subCols) {
                 data[subCol.id] = await exportSubCollection(subCol);
               }
-              
               result.push(data);
             }
             return result;
@@ -65,15 +63,12 @@ jobs:
           async function exportSubCollection(colRef) {
             const snapshot = await colRef.get();
             const result = [];
-
             for (const doc of snapshot.docs) {
               const data = { id: doc.id, ...doc.data() };
-              
               const subCols = await doc.ref.listCollections();
               for (const subCol of subCols) {
                 data[subCol.id] = await exportSubCollection(subCol);
               }
-              
               result.push(data);
             }
             return result;
@@ -86,7 +81,7 @@ jobs:
             const collections = await db.listCollections();
 
             for (const col of collections) {
-              console.log(`📁 Đang backup collection: ${col.id}`);
+              console.log(`📁 Đang backup: ${col.id}`);
               backup[col.id] = await exportCollection(col);
             }
 
@@ -96,7 +91,7 @@ jobs:
             fs.writeFileSync(filename, JSON.stringify(backup, null, 2));
             
             console.log(`✅ Backup hoàn tất: ${filename}`);
-            console.log(`📊 Tổng số collections: ${Object.keys(backup).length}`);
+            console.log(`📊 Tổng collections: ${Object.keys(backup).length}`);
           }
 
           main()
@@ -109,9 +104,31 @@ jobs:
 
           node backup.js
 
-      - name: Upload backup file
+      - name: Upload backup as artifact
         uses: actions/upload-artifact@v4
         with:
           name: firestore-backup
           path: backup-*.json
           retention-days: 60
+
+      - name: Send backup via email
+        if: success()  # Chỉ gửi nếu backup thành công
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ env.EMAIL_USERNAME }}
+          password: ${{ env.EMAIL_PASSWORD }}
+          subject: "📦 Firestore Backup - ${{ github.event_name == 'schedule' && 'Weekly' || 'Manual' }} - ${{ format(date, 'yyyy-MM-dd') }}"
+          to: ${{ env.EMAIL_TO }}
+          from: "Firestore Backup <${{ env.EMAIL_USERNAME }}>"
+          body: |
+            Backup Firestore hàng tuần đã hoàn tất thành công!
+            
+            📅 Ngày: ${{ format(date, 'yyyy-MM-dd HH:mm') }}
+            🔗 Repository: ${{ github.repository }}
+            🏃 Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            File backup đính kèm bên dưới.
+          attachments: backup-*.json
+          secure: true
