@@ -2,13 +2,13 @@ name: Firestore Weekly Backup - Thứ 4
 
 on:
   schedule:
-    - cron: '0 5 * * 3'
+    - cron: '0 5 * * 3'  # Chạy vào thứ 4 lúc 5:00 sáng (UTC)
   workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-    
+   
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
@@ -24,10 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          # cache: 'npm'   # ← Đã tắt tạm thời để tránh lỗi
+          # cache: 'npm'  # Tắt tạm thời để tránh lỗi
 
       - name: Install dependencies
-        run: npm install firebase-admin
+        run: npm install firebase-admin@latest
 
       - name: Get current date
         id: date
@@ -39,10 +39,12 @@ jobs:
           const admin = require("firebase-admin");
           const fs = require("fs");
 
+          // Parse service account
           const serviceAccount = JSON.parse(
-            Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString()
+            Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8')
           );
 
+          // Initialize Firebase Admin
           admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
           });
@@ -79,10 +81,10 @@ jobs:
 
           async function main() {
             console.log("🔄 Bắt đầu backup Firestore - " + new Date().toLocaleString('vi-VN'));
-            
+           
             const backup = {};
             const collections = await db.listCollections();
-
+            
             for (const col of collections) {
               console.log(`📁 Đang backup: ${col.id}`);
               backup[col.id] = await exportCollection(col);
@@ -90,15 +92,18 @@ jobs:
 
             const date = new Date().toISOString().slice(0, 10);
             const filename = `backup-${date}.json`;
-            
+           
             fs.writeFileSync(filename, JSON.stringify(backup, null, 2));
-            
+           
             console.log(`✅ Backup hoàn tất: ${filename}`);
             console.log(`📊 Tổng collections: ${Object.keys(backup).length}`);
           }
 
           main()
-            .then(() => process.exit(0))
+            .then(() => {
+              console.log("🎉 Backup thành công!");
+              process.exit(0);
+            })
             .catch(error => {
               console.error("❌ Lỗi backup:", error);
               process.exit(1);
@@ -131,7 +136,7 @@ jobs:
             📅 Ngày backup: ${{ steps.date.outputs.today }}
             🔗 Repository: ${{ github.repository }}
             🏃 Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            
+
             File backup được đính kèm bên dưới.
           attachments: backup-*.json
           secure: true
