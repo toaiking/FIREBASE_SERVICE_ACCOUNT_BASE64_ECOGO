@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoGo Dashboard – Nấm Lùn</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #21262d;
+    --accent: #3fb950;
+    --accent2: #58a6ff;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --pending: #d29922;
+    --transit: #58a6ff;
+    --delivered: #3fb950;
+    --cancelled: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 22px; }
+  .logo h1 { font-size: 16px; font-weight: 600; color: var(--accent); }
+  .logo span { font-size: 11px; color: var(--muted); margin-left: 8px; }
+  .header-meta { font-size: 11px; color: var(--muted); text-align: right; line-height: 1.6; }
+  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 5px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Layout ── */
+  main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── Section title ── */
+  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 28px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+  /* ── Stat cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-bar, var(--accent));
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-size: 24px; font-weight: 700; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* ── Charts grid ── */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+  .charts-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .chart-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── Tables ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-header { padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding: 8px 12px; text-align: left; background: rgba(255,255,255,.02); }
+  td { padding: 9px 12px; font-size: 13px; border-top: 1px solid var(--border); }
+  tr:hover td { background: rgba(255,255,255,.03); }
+
+  /* ── Status badges ── */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-PENDING    { background: rgba(210,153,34,.15);  color: var(--pending); }
+  .badge-IN_TRANSIT { background: rgba(88,166,255,.15);  color: var(--transit); }
+  .badge-DELIVERED  { background: rgba(63,185,80,.15);   color: var(--delivered); }
+  .badge-CANCELLED  { background: rgba(248,81,73,.15);   color: var(--cancelled); }
+  .badge-UNKNOWN    { background: rgba(139,148,158,.15); color: var(--muted); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+  .tab { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; } 
+  .tab-content.active { display: block; }
+
+  /* ── Search ── */
+  .search-bar { padding: 10px 12px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+  .search-bar input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 13px;
+    outline: none;
+  }
+  .search-bar input:focus { border-color: var(--accent2); }
+  .search-bar select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none;
+  }
+
+  /* ── Backup log ── */
+  .backup-timeline { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; }
+  .backup-dot {
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    background: rgba(63,185,80,.1); color: var(--accent); border: 1px solid rgba(63,185,80,.25);
+    cursor: default;
+    position: relative;
+  }
+  .backup-dot:hover .backup-tooltip { display: block; }
+  .backup-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d333b;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── Bar mini ── */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bar-label { width: 120px; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--border); border-radius: 3px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .bar-val { width: 90px; font-size: 11px; color: var(--muted); text-align: right; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-grid-2 { grid-template-columns: 1fr; }
+    main { padding: 12px 14px; }
+  }
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-value { font-size: 20px; }
+    table { font-size: 12px; }
+    td, th { padding: 7px 8px; }
+  }
+
+  .money { color: var(--accent); font-weight: 600; }
+  .dim { color: var(--muted); }
+  .text-right { text-align: right; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🐟</span>
+    <div>
+      <h1>EcoGo Dashboard</h1>
+    </div>
+    <span style="font-size:11px;color:var(--muted);margin-left:8px;">Nấm Lùn Shop</span>
+  </div>
+  <div class="header-meta" id="header-meta"></div>
+</header>
+
+<main>
+  <!-- KPI Cards -->
+  <p class="section-title">Tổng quan</p>
+  <div class="stats-grid" id="stats-grid"></div>
+
+  <!-- Charts -->
+  <p class="section-title">Doanh thu</p>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <p class="chart-title">Doanh thu 30 ngày gần nhất</p>
+      <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Trạng thái đơn hàng</p>
+      <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+    </div>
+  </div>
+  <div class="charts-grid-2">
+    <div class="chart-card">
+      <p class="chart-title">Doanh thu theo tuần (12 tuần)</p>
+      <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Phương thức thanh toán</p>
+      <div class="chart-wrap"><canvas id="chartPayment"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Products & Customers -->
+  <p class="section-title">Phân tích</p>
+  <div class="charts-grid">
+    <div class="table-card">
+      <div class="table-header">🏆 Sản phẩm bán chạy</div>
+      <div id="products-bars" style="padding:12px 16px;"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">👤 Top khách hàng</div>
+      <div id="customers-bars" style="padding:12px 16px;"></div>
+    </div>
+  </div>
+
+  <!-- Lô hàng -->
+  <p class="section-title">Lô hàng gần đây</p>
+  <div class="table-card" style="overflow-x:auto;">
+    <table>
+      <thead><tr>
+        <th>Tên lô</th>
+        <th class="text-right">Số đơn</th>
+        <th class="text-right">Doanh thu</th>
+      </tr></thead>
+      <tbody id="batches-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Orders table -->
+  <p class="section-title">Đơn hàng gần nhất</p>
+  <div class="table-card">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Tìm tên khách, địa chỉ, mã đơn...">
+      <select id="status-filter">
+        <option value="">Tất cả trạng thái</option>
+        <option value="PENDING">Chờ xử lý</option>
+        <option value="IN_TRANSIT">Đang giao</option>
+        <option value="DELIVERED">Đã giao</option>
+        <option value="CANCELLED">Đã huỷ</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th>Mã đơn</th>
+          <th>Khách hàng</th>
+          <th>Địa chỉ</th>
+          <th>Lô</th>
+          <th class="text-right">Số tiền</th>
+          <th>Trạng thái</th>
+          <th>Thanh toán</th>
+          <th>Ngày tạo</th>
+        </tr></thead>
+        <tbody id="orders-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Backup log -->
+  <p class="section-title">Lịch sử backup</p>
+  <div class="table-card">
+    <div class="backup-timeline" id="backup-timeline"></div>
+  </div>
+
+</main>
+
+<script>
+const D = {"meta":{"generatedAt":"2026-06-16T02:48:45.874Z","backupCount":1,"backupDates":["2026-06-11"],"lastBackup":"2026-06-11"},"stats":{"totalOrders":2301,"totalRevenue":432600375,"deliveredRevenue":380437780,"pending":283,"inTransit":5,"delivered":1988,"cancelled":0},"charts":{"daily":{"labels":["2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-16","2026-05-17","2026-05-18","2026-05-19","2026-05-20","2026-05-22","2026-05-23","2026-05-24","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-05-30","2026-05-31","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10"],"data":[395100,545000,8515000,18596250,9503000,5254500,5510000,1260000,16722500,2802500,11442800,4321200,280000,295000,985000,2010,5164500,10269075,5540625,13662350,8316400,3704200,1480000,5826200,8780600,6062275,2127830,270000,140000,3578000]},"weekly":{"labels":["2026-03-23","2026-03-30","2026-04-06","2026-04-13","2026-04-20","2026-04-27","2026-05-04","2026-05-11","2026-05-18","2026-05-25","2026-06-01","2026-06-08"],"data":[38487750,24602550,18740000,20067605,33920000,30291280,26830000,48318850,36829000,35918560,36297505,3988000]},"status":{"labels":["Chờ xử lý","Đang giao","Đã giao","UNKNOWN","PICKED_UP"],"data":[283,5,1988,6,19]},"payment":{"labels":["CASH","TRANSFER","UNKNOWN","COD"],"data":[399,1894,6,2]}},"topProducts":[{"name":"Mực bèo","qty":138,"revenue":22770000},{"name":"Sú 20","qty":74,"revenue":21780000},{"name":"Tôm thẻ thiên nhiên","qty":84.5,"revenue":17235000},{"name":"Chả cá dảnh trộn thác lác","qty":126.5,"revenue":16976000},{"name":"Sen","qty":116,"revenue":16972500},{"name":"Mực ống lở","qty":67.5,"revenue":14080000},{"name":"Chả tôm","qty":59.5,"revenue":12495000},{"name":"Bèo sổn","qty":57,"revenue":11115000},{"name":"Cá chim","qty":46.15,"revenue":8999250},{"name":"Sú sô","qty":39,"revenue":8040000}],"topCustomers":[{"name":"anh sửu","count":17,"revenue":13243250},{"name":"ngọc hân phan","count":16,"revenue":10220175},{"name":"nguyễn la","count":14,"revenue":7404500},{"name":"xuân hoa","count":18,"revenue":6170400},{"name":"Hằng nguyễn thị lê","count":18,"revenue":5146450},{"name":"Christina yen","count":2,"revenue":3540000},{"name":"Thảo thảo","count":4,"revenue":3342700},{"name":"Nguyễn thị thanh hoa","count":17,"revenue":3273500},{"name":"thanh tú","count":20,"revenue":3215200},{"name":"Thị ngọt nguyễn","count":10,"revenue":3156050}],"topBatches":[{"name":"LÔ-2026-05-30 tôm , chả tôm","count":78,"revenue":15191175},{"name":"Tôm thứ 7","count":48,"revenue":14537500},{"name":"LÔ-SAU-2026-03-28","count":32,"revenue":14060500},{"name":"LÔ-2026-04-04 thóc , mú , thu , ngừ , chim ...","count":43,"revenue":13184550},{"name":"Chả tôm ","count":60,"revenue":13032500},{"name":"LÔ-2026-03-27 nục điếu , gốc , ruốc , chuồn","count":65,"revenue":12937500},{"name":"LÔ-2026-04-10 mực bèo sửa","count":58,"revenue":12020000},{"name":"LÔ-2026-05-24 hạt sen , hàu , chả cá thác lác pha cá dảnh ","count":72,"revenue":11854000}],"recentOrders":[{"id":"FFAE500B","customerName":"Trương thu","address":"Vp2","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":90000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778322386837,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"FD76238C","customerName":"Hương phạm","address":"Cafe gạo phía bờ kè maria","batchId":"LÔ-2026-04-14 ốc hương","totalPrice":180000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1776154490834,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"FC48AD4A","customerName":"cô nhi","address":"22 VP41 k ế KS minh hiếu","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":50000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778291894447,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"FC44C2A6","customerName":"Một tháng 6","address":"Nhà phố","batchId":"LÔ-2026-05-30 tôm , chả tôm","totalPrice":105000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1780040111058,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F8FC532B","customerName":"Hương phạm ","address":"Maria","batchId":"LÔ-2026-05-30 tôm , chả tôm","totalPrice":165000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1780111250102,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F8BE6130","customerName":"chị hương","address":"B3204","batchId":"Chả tôm ","totalPrice":105000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1780244354582,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F743F2B6","customerName":"Minh thoa bùi","address":"Eden","batchId":"Tôm thứ 7","totalPrice":145000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778139796057,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F730B2DD","customerName":"NHÀ ĂN","address":"ecoxuan","batchId":"LÔ-2026-03-05 tôm thẻ thiên nhiên","totalPrice":210000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1772750181062,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F53D64CB","customerName":"nguyen thy","address":"c3506","batchId":"Mực ốc thứ 2","totalPrice":185000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1777276237388,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F53C99B5","customerName":"nhung tap hóa","address":"c4","batchId":"LÔ-2026-03-07toom sắc bạc","totalPrice":160000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1772897928505,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"F0721764","customerName":"Chú bv sảnh c4","address":"C4","batchId":"LÔ-2026-05-16 hạt sen","totalPrice":75000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1778946504068,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"ECD632CA","customerName":"Lệ thanh ","address":"Vp17","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":115000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778292376076,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"EC4095F8","customerName":"Nguyễn thị luốn","address":"C2303","batchId":"LÔ-2026-05-16 hạt sen","totalPrice":75000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1778744352668,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"EBD3292E","customerName":"Nguyễn thị hoàng trâm","address":"T16 đg 4a","batchId":"2026-03-03 sơn thóc , chim , sòng , nục , ngừ sọc","totalPrice":125000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1772609938881,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"EBC18231","customerName":"Linh trần","address":"Cuối đg kdc vĩnh an","batchId":"LÔ-2026-04-24 nục điếu cá ngừ ồ","totalPrice":100000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1776952258275,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"EAF75F26","customerName":"Diệp nguyễn rivana","address":"Rivana","batchId":"LÔ-2026-05-08 cá bóng , tôm sắc bạc đất","totalPrice":75000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1779074914989,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"E86EAA7D","customerName":"Nguyễn phương","address":"C2229","batchId":"Chả tôm ","totalPrice":210000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1780244212319,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"E75430BE","customerName":"xi trum","address":"b2228","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":110000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778292834206,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"E4E9CF6C","customerName":"Lá cỏ ba","address":"Kdcvp2","batchId":"Tôm thứ 7","totalPrice":140000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778141241438,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"E0CB1A7C","customerName":"vo nguyen","address":"h5","batchId":"LÔ-2026-03-22 tôm thẻ , tôm sú ","totalPrice":210000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1774144048666,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"DF8FC9D4","customerName":"Quyen nguyen","address":"Maria ","batchId":"Tôm thứ 6","totalPrice":150000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778232099204,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"DEFA0E22","customerName":"Một tháng 6","address":"Nhà phố","batchId":"LÔ-2026-06-3 chim , thóc , ồ , cờ nục , hố ..","totalPrice":165000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1780242786499,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"DC14E9EE","customerName":"bến đổ","address":"b2-417","batchId":"LÔ-2026-06-3 chim , thóc , ồ , cờ nục , hố ..","totalPrice":195000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1780242384750,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"D831C29B","customerName":"Phạm thị thu huyền","address":"Giao tiệm sơn thiên ân phát. Cạnh cây xăng minh phụng á","batchId":"LÔ-2026-04-10 mực bèo sửa","totalPrice":165000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1775809724459,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"D678CED4","customerName":"Bích trâm c ecouan","address":"C ecoxuan","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":202500,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778293263908,"itemCount":3,"_backupDate":"2026-06-11"},{"id":"D2415AE7","customerName":"ngô đồng","address":"ghé","batchId":"LÔ-2026-03-15 bánh hỏi , nem chả ...","totalPrice":55000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1773407049614,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"D1AF38CF","customerName":"nhung tap hóa","address":"c4","batchId":"LÔ-2026-03-27 nục điếu , gốc , ruốc , chuồn","totalPrice":300000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1774596555584,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"D073A694","customerName":"thanh tú","address":"c1214","batchId":"LÔ-2026-03-04 trác , trích , điệp , thóc","totalPrice":75000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1772750527258,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"CF3F3002","customerName":"hồng anh","address":"maria b","batchId":"Tôm thứ 7","totalPrice":140000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778141173195,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"CE261421","customerName":"Cô ba trà","address":"Splus","batchId":"LÔ-2026-05-30 tôm , chả tôm","totalPrice":340000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1780108912326,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"CAF89BB2","customerName":"oanh yumi","address":"C3-303","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":72500,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778322219126,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"C8CD62F8","customerName":"Nguyễn thị thiên hương","address":"A ecoxuan","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":55000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778302723448,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"C7581CBC","customerName":"nguyễn liên","address":"c1510","batchId":"Tôm thứ 7","totalPrice":145000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778141285972,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C68C0155","customerName":"Dĩ Dương An","address":"kdc vp2","batchId":"LÔ-2026-03-02 cá nục","totalPrice":125000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1772456396285,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C624E8AF","customerName":"Tuyết nhung","address":"A ecoxuan","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":55000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778322608587,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C4217126","customerName":" Tố tố","address":"Lái thiêu 14","batchId":"Sau","totalPrice":205000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778391929848,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C31080EB","customerName":"phạm kim chi","address":"ecoxuan c","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":27500,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778301422255,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C291A167","customerName":"Huyền ","address":"Kdcvp2 nhà bán ga","batchId":"LÔ-SAU-2026-03-28","totalPrice":82500,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1774647584671,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"C25240B3","customerName":"Lê hồ bảo ngọc","address":"A ecoxuan","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":72500,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778302759548,"itemCount":3,"_backupDate":"2026-06-11"},{"id":"BEE0E6E8","customerName":"Thị ngọt nguyễn","address":"A maria","batchId":"Chả tôm ","totalPrice":210000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1780244247714,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"BD7A3E2F","customerName":"Minh thoa bùi","address":"Eden","batchId":"Ghim đông","totalPrice":485000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778078332545,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"BD688A88","customerName":"nguyen ước","address":"splus","batchId":"LÔ-2026-05-010 bánh hỏi ","totalPrice":50000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778293216345,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"BA2F1A5A","customerName":"Nhã trúc","address":"Ghé","batchId":"LÔ-2026-05-16 hạt sen","totalPrice":145000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1778744895333,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"B76A28D1","customerName":"tuyến nguyễn","address":"c2","batchId":"LÔ-2026-03-22 bánh hỏi , bèo ,xèo,gói ","totalPrice":117500,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1774103250226,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"B762A247","customerName":"Phương thảo","address":"B3423","batchId":"LÔ-2026-04-04 thóc , mú , thu , ngừ , chim ...","totalPrice":304950,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1775133112057,"itemCount":2,"_backupDate":"2026-06-11"},{"id":"B72358F7","customerName":"anh sửu","address":"Ghé ","batchId":"LÔ-2026-04-24 mực bèo","totalPrice":225000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1776951398547,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"B722A799","customerName":"Phùng xuân","address":"R17","batchId":"LÔ-2026-05-16 hạt sen","totalPrice":75000,"status":"DELIVERED","paymentMethod":"CASH","createdAt":1778744410710,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"B68649DD","customerName":"Salyy","address":"U5","batchId":"Chả tôm ","totalPrice":105000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1780244500412,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"B3C50FF2","customerName":"Nguyễn phương","address":"C2229","batchId":"Ghim đông","totalPrice":460000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778139723765,"itemCount":1,"_backupDate":"2026-06-11"},{"id":"B2C20A08","customerName":"Bảo anh","address":"Nhà phố","batchId":"Tôm thứ 7","totalPrice":145000,"status":"DELIVERED","paymentMethod":"TRANSFER","createdAt":1778140155756,"itemCount":1,"_backupDate":"2026-06-11"}],"snapshotLog":[{"date":"2026-06-11","auditCount":445,"processedOrders":2708,"totalKnownOrders":2301}]};
+
+// ── Helpers ─────────────────────────────────────────────────
+const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + 'đ';
+const fmtK = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : Math.round(n).toString();
+const fmtDate = ts => {
+  if (!ts) return '—';
+  const d = new Date(ts > 1e12 ? ts : ts * 1000);
+  return d.toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit',year:'2-digit'});
+};
+const STATUS_VI = {PENDING:'Chờ xử lý',IN_TRANSIT:'Đang giao',DELIVERED:'Đã giao',CANCELLED:'Đã huỷ'};
+const PAY_VI = {CASH:'Tiền mặt',TRANSFER:'Chuyển khoản'};
+
+// ── Header meta ─────────────────────────────────────────────
+document.getElementById('header-meta').innerHTML =
+  '<span class="pulse"></span>Cập nhật: ' +
+  new Date(D.meta.generatedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}) +
+  '<br>Từ ' + D.meta.backupCount + ' file backup | Backup mới nhất: ' + D.meta.lastBackup;
+
+// ── Stat cards ──────────────────────────────────────────────
+const statDefs = [
+  { label:'Tổng đơn hàng', value: D.stats.totalOrders.toLocaleString(), sub:'tất cả trạng thái', color:'#3fb950' },
+  { label:'Doanh thu (không huỷ)', value: fmtK(D.stats.totalRevenue), sub:fmt(D.stats.totalRevenue), color:'#3fb950' },
+  { label:'Đã giao – doanh thu', value: fmtK(D.stats.deliveredRevenue), sub:D.stats.delivered + ' đơn', color:'#3fb950' },
+  { label:'Chờ xử lý', value: D.stats.pending, sub:'đơn PENDING', color:'#d29922' },
+  { label:'Đang giao', value: D.stats.inTransit, sub:'đơn IN_TRANSIT', color:'#58a6ff' },
+  { label:'Đã huỷ', value: D.stats.cancelled, sub:'đơn CANCELLED', color:'#f85149' },
+];
+document.getElementById('stats-grid').innerHTML = statDefs.map(s => `
+  <div class="stat-card" style="--accent-bar:${s.color}">
+    <p class="stat-label">${s.label}</p>
+    <p class="stat-value" style="color:${s.color}">${s.value}</p>
+    <p class="stat-sub">${s.sub}</p>
+  </div>
+`).join('');
+
+// ── Chart defaults ──────────────────────────────────────────
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#21262d';
+const COLORS = ['#3fb950','#58a6ff','#d29922','#f78166','#d2a8ff','#79c0ff','#ffa657'];
+
+// ── Daily revenue chart ─────────────────────────────────────
+new Chart(document.getElementById('chartDaily'), {
+  type: 'bar',
+  data: {
+    labels: D.charts.daily.labels,
+    datasets: [{
+      label: 'Doanh thu',
+      data: D.charts.daily.data,
+      backgroundColor: 'rgba(63,185,80,.35)',
+      borderColor: '#3fb950',
+      borderWidth: 1,
+      borderRadius: 3,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } } },
+    scales: {
+      x: { ticks: { font:{size:10}, maxRotation:45 } },
+      y: { ticks: { callback: v => fmtK(v) } }
+    }
+  }
+});
+
+// ── Status donut ────────────────────────────────────────────
+new Chart(document.getElementById('chartStatus'), {
+  type: 'doughnut',
+  data: {
+    labels: D.charts.status.labels,
+    datasets: [{ data: D.charts.status.data, backgroundColor: ['#d29922','#58a6ff','#3fb950','#f85149'], borderWidth: 0 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position:'right', labels:{ font:{size:11}, boxWidth:12 } } }
+  }
+});
+
+// ── Weekly chart ────────────────────────────────────────────
+new Chart(document.getElementById('chartWeekly'), {
+  type: 'line',
+  data: {
+    labels: D.charts.weekly.labels,
+    datasets: [{
+      label: 'Doanh thu tuần',
+      data: D.charts.weekly.data,
+      borderColor: '#58a6ff',
+      backgroundColor: 'rgba(88,166,255,.1)',
+      tension: .3, fill: true, pointRadius: 3, pointBackgroundColor: '#58a6ff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>fmt(ctx.raw) } } },
+    scales: { y:{ ticks:{ callback: v=>fmtK(v) } } }
+  }
+});
+
+// ── Payment pie ─────────────────────────────────────────────
+new Chart(document.getElementById('chartPayment'), {
+  type: 'pie',
+  data: {
+    labels: D.charts.payment.labels.map(l => PAY_VI[l]||l),
+    datasets: [{ data: D.charts.payment.data, backgroundColor: COLORS, borderWidth: 0 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{ position:'right', labels:{ font:{size:11}, boxWidth:12 } } }
+  }
+});
+
+// ── Product bars ─────────────────────────────────────────────
+const maxProd = D.topProducts[0]?.revenue || 1;
+document.getElementById('products-bars').innerHTML = D.topProducts.map(p => `
+  <div class="bar-row">
+    <span class="bar-label" title="${p.name}">${p.name}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${(p.revenue/maxProd*100).toFixed(1)}%"></div></div>
+    <span class="bar-val">${fmtK(p.revenue)}</span>
+  </div>
+`).join('');
+
+// ── Customer bars ─────────────────────────────────────────────
+const maxCust = D.topCustomers[0]?.revenue || 1;
+document.getElementById('customers-bars').innerHTML = D.topCustomers.map(c => `
+  <div class="bar-row">
+    <span class="bar-label" title="${c.name}">${c.name}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${(c.revenue/maxCust*100).toFixed(1)}%;background:#58a6ff"></div></div>
+    <span class="bar-val">${c.count} đơn</span>
+  </div>
+`).join('');
+
+// ── Batches table ─────────────────────────────────────────────
+document.getElementById('batches-tbody').innerHTML = D.topBatches.map(b => `
+  <tr>
+    <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.name}">${b.name}</td>
+    <td class="text-right dim">${b.count}</td>
+    <td class="text-right money">${fmtK(b.revenue)}</td>
+  </tr>
+`).join('');
+
+// ── Orders table ─────────────────────────────────────────────
+let filteredOrders = [...D.recentOrders];
+function renderOrders() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const st = document.getElementById('status-filter').value;
+  const rows = filteredOrders.filter(o => {
+    const matchQ = !q || [o.id, o.customerName, o.address, o.batchId].some(v => (v||'').toLowerCase().includes(q));
+    const matchS = !st || o.status === st;
+    return matchQ && matchS;
+  });
+  document.getElementById('orders-tbody').innerHTML = rows.map(o => `
+    <tr>
+      <td><code style="font-size:11px;color:var(--accent2)">${o.id||'—'}</code></td>
+      <td>${o.customerName}</td>
+      <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.address}</td>
+      <td class="dim" style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.batchId}">${o.batchId}</td>
+      <td class="text-right money">${fmt(o.totalPrice)}</td>
+      <td><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></td>
+      <td class="dim">${PAY_VI[o.paymentMethod]||o.paymentMethod}</td>
+      <td class="dim">${fmtDate(o.createdAt)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Không tìm thấy đơn hàng</td></tr>';
+}
+document.getElementById('search-input').addEventListener('input', renderOrders);
+document.getElementById('status-filter').addEventListener('change', renderOrders);
+renderOrders();
+
+// ── Backup timeline ───────────────────────────────────────────
+document.getElementById('backup-timeline').innerHTML = D.snapshotLog.map(s => `
+  <div class="backup-dot">${s.date}
+    <div class="backup-tooltip">
+      📅 ${s.date}<br>
+      📋 ${s.auditCount.toLocaleString()} audit logs<br>
+      🔄 ${s.processedOrders} đơn cập nhật<br>
+      📦 Tổng lũy kế: ${s.totalKnownOrders} đơn
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>
