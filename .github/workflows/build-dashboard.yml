@@ -1,0 +1,104 @@
+
+# Build & Deploy Dashboard - Chạy sau mỗi lần backup hoàn tất
+# Deploy lên GitHub Pages tại: https://<username>.github.io/<repo>/
+
+name: Build Order Dashboard
+
+on:
+  repository_dispatch:
+    types: [backup-completed]   # Triggered bởi workflow backup
+  workflow_dispatch:             # Chạy thủ công khi cần
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ── Tải tất cả artifacts backup về ──────────────────────────────────────
+      - name: Download all backup artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Lấy danh sách tất cả artifacts tên bắt đầu bằng "firestore-backup-"
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            const backupArtifacts = artifacts.data.artifacts
+              .filter(a => a.name.startsWith('firestore-backup-') && !a.expired)
+              .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            console.log(`Tìm thấy ${backupArtifacts.length} backup artifacts`);
+
+            fs.mkdirSync('backups', { recursive: true });
+
+            for (const artifact of backupArtifacts) {
+              console.log(`Downloading: ${artifact.name}`);
+              try {
+                const download = await github.rest.actions.downloadArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                  archive_format: 'zip',
+                });
+
+                // Lưu zip và giải nén
+                const zipPath = `backups/${artifact.name}.zip`;
+                fs.writeFileSync(zipPath, Buffer.from(download.data));
+
+                const { execSync } = require('child_process');
+                execSync(`unzip -o "${zipPath}" -d backups/ && rm "${zipPath}"`);
+              } catch (err) {
+                console.warn(`Không thể tải ${artifact.name}: ${err.message}`);
+              }
+            }
+
+            // Liệt kê các file đã tải
+            const files = fs.readdirSync('backups').filter(f => f.endsWith('.json'));
+            console.log(`Đã tải ${files.length} file backup:`, files.join(', '));
+
+      # ── Build dashboard HTML ─────────────────────────────────────────────────
+      - name: Build dashboard
+        run: node .github/scripts/build-dashboard.js
+
+      # ── Upload cho Pages ─────────────────────────────────────────────────────
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
