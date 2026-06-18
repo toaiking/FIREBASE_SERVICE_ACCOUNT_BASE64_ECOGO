@@ -90,9 +90,14 @@ const FIELDS_TO_TRACK = [
   { key: "totalPrice", label: "Tổng tiền", isMoney: true },
   { key: "address", label: "Địa chỉ" },
   { key: "paymentMethod", label: "Thanh toán" },
+  { key: "paymentVerified", label: "Xác nhận chuyển khoản", isBool: true },
   { key: "batchId", label: "Lô hàng" },
   { key: "customerName", label: "Tên khách" },
 ];
+
+function isDeleted(o) {
+  return o && (o.deleteFlag === true || o.deleteFlag === 1);
+}
 
 const changeEvents = []; // { date, orderId, customerName, type, field, from, to }
 
@@ -118,6 +123,24 @@ for (let i = 1; i < snapshots.length; i++) {
 
     // Đơn đã tồn tại — so sánh field
     const prevOrder = prev.orders.get(id);
+
+    // ── Soft-delete / khôi phục: xử lý riêng (ưu tiên hơn field thường) ──
+    const wasDeleted = isDeleted(prevOrder);
+    const nowDeleted = isDeleted(order);
+    if (wasDeleted !== nowDeleted) {
+      changeEvents.push({
+        date: curr.date,
+        orderId: id,
+        customerName: order.customerName || "—",
+        type: nowDeleted ? "SOFT_DELETED" : "SOFT_RESTORED",
+        field: "deleteFlag",
+        fieldLabel: "Trạng thái xoá mềm",
+        from: wasDeleted,
+        to: nowDeleted,
+        order,
+      });
+    }
+
     for (const f of FIELDS_TO_TRACK) {
       const a = prevOrder[f.key];
       const b = order[f.key];
@@ -186,7 +209,16 @@ console.log(`🔄 Phát hiện ${changeEvents.length} sự kiện thay đổi gi
 // 3. TRẠNG THÁI MỚI NHẤT CỦA TOÀN BỘ ĐƠN (từ snapshot cuối)
 // ════════════════════════════════════════════════════════════
 const allOrders = Array.from(latest.orders.values());
-console.log(`📊 Tổng đơn hàng hiện tại: ${allOrders.length}`);
+
+// Tách đơn đã xoá mềm (deleteFlag=true) ra riêng — KHÔNG tính vào KPI,
+// doanh thu, sản phẩm, lô hàng, anomaly. Người dùng hay xoá mềm thay vì
+// chuyển status sang CANCELLED, nên nếu không tách sẽ làm sai số liệu.
+const liveOrders = allOrders.filter((o) => !isDeleted(o));
+const deletedOrders = allOrders.filter((o) => isDeleted(o));
+
+console.log(
+  `📊 Tổng đơn hàng: ${allOrders.length} (đang hoạt động: ${liveOrders.length}, đã xoá mềm: ${deletedOrders.length})`
+);
 
 const STATUS_VI = {
   PENDING: "Chờ xử lý",
@@ -195,24 +227,24 @@ const STATUS_VI = {
   DELIVERED: "Đã giao",
   CANCELLED: "Đã huỷ",
 };
-const PAY_VI = { CASH: "Tiền mặt", TRANSFER: "Chuyển khoản" };
+const PAY_VI = { CASH: "Tiền mặt", TRANSFER: "Chuyển khoản", COD: "Thu hộ (COD)" };
 
 function tsToDate(ts) {
   if (!ts) return null;
   return new Date(ts > 1e12 ? ts : ts * 1000);
 }
 
-// ── Status distribution ─────────────────────────────────────
+// ── Status distribution (chỉ tính đơn đang hoạt động) ───────
 const statusCount = {};
-for (const o of allOrders) {
+for (const o of liveOrders) {
   const s = o.status || "UNKNOWN";
   statusCount[s] = (statusCount[s] || 0) + 1;
 }
 
-// ── Revenue ──────────────────────────────────────────────────
-const activeOrders = allOrders.filter((o) => o.status !== "CANCELLED");
+// ── Revenue (chỉ tính đơn đang hoạt động, không xoá mềm, không huỷ) ──
+const activeOrders = liveOrders.filter((o) => o.status !== "CANCELLED");
 const totalRevenue = activeOrders.reduce((s, o) => s + (o.totalPrice || 0), 0);
-const deliveredRevenue = allOrders
+const deliveredRevenue = liveOrders
   .filter((o) => o.status === "DELIVERED")
   .reduce((s, o) => s + (o.totalPrice || 0), 0);
 const avgOrderValue = activeOrders.length ? totalRevenue / activeOrders.length : 0;
@@ -274,9 +306,11 @@ const topCustomers = Object.entries(customerMap)
   .map(([name, v]) => ({ name, count: v.count, revenue: v.revenue, phone: v.phone }));
 
 // ── Batches ─────────────────────────────────────────────────
-// Mỗi lô: tổng đơn, doanh thu, số huỷ, VÀ tổng số lượng từng sản phẩm trong lô
+// Mỗi lô: tổng đơn (đang hoạt động), doanh thu, số huỷ, số xoá mềm,
+// VÀ tổng số lượng từng sản phẩm trong lô — CHỈ tính trên liveOrders
+// để số liệu không bị lẫn đơn đã xoá mềm.
 const batchMap = {};
-for (const o of allOrders) {
+for (const o of liveOrders) {
   const b = o.batchId || "Không có lô";
   if (!batchMap[b]) {
     batchMap[b] = { count: 0, revenue: 0, cancelled: 0, products: {}, firstDate: null, lastDate: null };
@@ -302,6 +336,13 @@ for (const o of allOrders) {
   }
 }
 
+// Đếm riêng số đơn đã xoá mềm thuộc mỗi lô (chỉ để hiển thị, không gộp vào count/revenue)
+const deletedCountByBatch = {};
+for (const o of deletedOrders) {
+  const b = o.batchId || "Không có lô";
+  deletedCountByBatch[b] = (deletedCountByBatch[b] || 0) + 1;
+}
+
 // Toàn bộ lô hàng (không cắt top N) — để hỗ trợ lọc đầy đủ trên UI
 const allBatches = Object.entries(batchMap)
   .sort((a, b) => b[1].revenue - a[1].revenue)
@@ -310,6 +351,7 @@ const allBatches = Object.entries(batchMap)
     count: v.count,
     revenue: v.revenue,
     cancelled: v.cancelled,
+    deletedCount: deletedCountByBatch[name] || 0,
     firstDate: v.firstDate,
     lastDate: v.lastDate,
     totalQty: Object.values(v.products).reduce((s, p) => s + p.qty, 0),
@@ -326,6 +368,14 @@ for (const o of activeOrders) {
   const m = o.paymentMethod || "UNKNOWN";
   paymentMap[m] = (paymentMap[m] || 0) + 1;
 }
+
+// ── Xác nhận chuyển khoản (chỉ áp dụng cho phương thức TRANSFER) ──
+const transferOrders = activeOrders.filter((o) => o.paymentMethod === "TRANSFER");
+const transferVerified = transferOrders.filter((o) => o.paymentVerified === true).length;
+const transferUnverified = transferOrders.filter((o) => o.paymentVerified !== true).length;
+const transferUnverifiedRevenue = transferOrders
+  .filter((o) => o.paymentVerified !== true)
+  .reduce((s, o) => s + (o.totalPrice || 0), 0);
 
 // ════════════════════════════════════════════════════════════
 // 4. ANOMALY DETECTION
@@ -438,7 +488,7 @@ for (let i = 7; i < dailyKeys.length; i++) {
 // (e) Đơn PENDING quá lâu (>5 ngày kể từ createdAt, vẫn pending tại snapshot cuối)
 {
   const now = Date.now();
-  for (const o of allOrders) {
+  for (const o of liveOrders) {
     if (o.status !== "PENDING") continue;
     const d = tsToDate(o.createdAt);
     if (!d) continue;
@@ -456,18 +506,45 @@ for (let i = 7; i < dailyKeys.length; i++) {
   }
 }
 
-// Sắp xếp anomaly theo độ nghiêm trọng, lấy đại diện cân đối từng mức
-// (tránh trường hợp "high" có quá nhiều khiến medium/low bị che mất hoàn toàn)
-const SEV_RANK = { high: 3, medium: 2, low: 1 };
-anomalies.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity]);
-
-const BY_SEV_LIMIT = { high: 40, medium: 30, low: 20 };
-const sevBuckets = { high: [], medium: [], low: [] };
-for (const a of anomalies) {
-  const bucket = sevBuckets[a.severity];
-  if (bucket && bucket.length < BY_SEV_LIMIT[a.severity]) bucket.push(a);
+// (f) Chuyển khoản chưa xác nhận quá lâu (>3 ngày, vẫn chưa verified tại snapshot cuối)
+{
+  const now = Date.now();
+  for (const o of liveOrders) {
+    if (o.paymentMethod !== "TRANSFER") continue;
+    if (o.paymentVerified === true) continue;
+    if (o.status === "CANCELLED") continue;
+    const d = tsToDate(o.createdAt);
+    if (!d) continue;
+    const ageDays = (now - d.getTime()) / 86400000;
+    if (ageDays > 3) {
+      anomalies.push({
+        type: "UNVERIFIED_TRANSFER",
+        severity: ageDays > 10 ? "high" : "medium",
+        title: "Chuyển khoản chưa xác nhận",
+        detail: `${o.customerName || "—"}: ${(o.totalPrice || 0).toLocaleString("vi-VN")}đ · ${Math.floor(ageDays)} ngày chưa xác nhận`,
+        orderId: o.id,
+        customerName: o.customerName,
+      });
+    }
+  }
 }
-const topAnomalies = [...sevBuckets.high, ...sevBuckets.medium, ...sevBuckets.low];
+
+// Chọn đại diện cân đối: ưu tiên mỗi LOẠI bất thường đều có mặt (tối đa N/loại),
+// trong mỗi loại thì ưu tiên severity cao trước. Tránh trường hợp loại xuất hiện
+// nhiều (như STALE_PENDING) lấn hết chỗ của loại khác (như UNVERIFIED_TRANSFER).
+const SEV_RANK = { high: 3, medium: 2, low: 1 };
+const PER_TYPE_LIMIT = 15;
+const byType = {};
+for (const a of anomalies) {
+  (byType[a.type] = byType[a.type] || []).push(a);
+}
+let topAnomalies = [];
+for (const type of Object.keys(byType)) {
+  const sorted = byType[type].sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity]);
+  topAnomalies.push(...sorted.slice(0, PER_TYPE_LIMIT));
+}
+// Sắp xếp lại toàn bộ theo severity để hiển thị cái nghiêm trọng nhất lên đầu
+topAnomalies.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity]);
 
 console.log(`🔍 Phát hiện ${anomalies.length} bất thường (hiển thị top ${topAnomalies.length})`);
 
@@ -528,6 +605,9 @@ const allOrdersForUI = allOrders.map((o) => ({
   totalPrice: o.totalPrice || 0,
   status: o.status || "UNKNOWN",
   paymentMethod: o.paymentMethod || "—",
+  paymentVerified: o.paymentVerified === true,
+  paymentVerifiedKnown: typeof o.paymentVerified === "boolean",
+  deleted: isDeleted(o),
   createdAt: o.createdAt || 0,
   updatedAt: o.updatedAt || 0,
   items: (o.items || []).map((it) => ({
@@ -550,7 +630,8 @@ const dashData = {
     lastBackup: latest.date,
   },
   stats: {
-    totalOrders: allOrders.length,
+    totalOrders: liveOrders.length,
+    deletedCount: deletedOrders.length,
     totalRevenue,
     deliveredRevenue,
     avgOrderValue,
@@ -561,6 +642,9 @@ const dashData = {
     cancelled: statusCount["CANCELLED"] || 0,
     totalCustomers: latest.customers.length,
     totalProducts: latest.products.length,
+    transferVerified,
+    transferUnverified,
+    transferUnverifiedRevenue,
   },
   charts: {
     daily: { labels: dailyKeys, revenue: dailyRevenue, counts: dailyCounts },
@@ -600,5 +684,8 @@ fs.writeFileSync(path.join(DIST_DIR, "index.html"), html, "utf8");
 
 console.log(`\n✅ Dashboard built → dist/index.html`);
 console.log(
-  `   ${allOrders.length} đơn | ${allBatches.length} lô hàng | ${changeEvents.length} thay đổi | ${anomalies.length} bất thường | doanh thu ${(totalRevenue / 1e6).toFixed(2)}M đ`
+  `   ${liveOrders.length} đơn hoạt động (+ ${deletedOrders.length} đã xoá mềm) | ${allBatches.length} lô hàng | ${changeEvents.length} thay đổi | ${anomalies.length} bất thường`
+);
+console.log(
+  `   Doanh thu: ${(totalRevenue / 1e6).toFixed(2)}M đ | Chuyển khoản chưa xác nhận: ${transferUnverified} đơn (${(transferUnverifiedRevenue / 1e6).toFixed(2)}M đ)`
 );
