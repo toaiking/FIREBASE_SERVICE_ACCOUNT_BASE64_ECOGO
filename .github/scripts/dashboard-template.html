@@ -174,6 +174,7 @@ main { max-width: 1440px; margin: 0 auto; padding: 24px 28px 80px; }
 .panel-head {
   padding: 14px 18px; border-bottom: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
 }
 .panel-title { font-size: 12.5px; font-weight: 700; color: var(--foam); }
 .panel-title .sub { font-size: 11px; color: var(--dim); font-weight: 500; margin-left: 8px; }
@@ -206,6 +207,12 @@ thead th {
   background: var(--surface-2); white-space: nowrap;
   border-bottom: 1px solid var(--line);
 }
+thead th.sortable { cursor: pointer; user-select: none; transition: color .12s; }
+thead th.sortable:hover { color: var(--mist); }
+thead th.sortable.sort-active { color: var(--tide); }
+thead th.sortable::after { content: '⇅'; margin-left: 5px; opacity: .35; font-size: 9px; }
+thead th.sortable.sort-active.sort-asc::after { content: '↑'; opacity: 1; }
+thead th.sortable.sort-active.sort-desc::after { content: '↓'; opacity: 1; }
 tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
 tbody tr { transition: background .1s; cursor: pointer; }
 tbody tr:hover td { background: rgba(45,212,191,.04); }
@@ -328,6 +335,8 @@ select:focus { border-color: var(--tide); }
 .hist-type.NEW { background: rgba(52,211,153,.15); color: var(--kelp); }
 .hist-type.CHANGED, .hist-type.PRICE_CHANGED { background: rgba(56,189,248,.15); color: var(--current); }
 .hist-type.REMOVED { background: rgba(251,113,133,.15); color: var(--coral); }
+.hist-type.SOFT_DELETED { background: rgba(251,113,133,.15); color: var(--coral); }
+.hist-type.SOFT_RESTORED { background: rgba(52,211,153,.15); color: var(--kelp); }
 
 /* ════════════════════════════════════════════════════════════
    ANOMALY CARDS
@@ -423,6 +432,7 @@ select:focus { border-color: var(--tide); }
     <button class="tab-btn active" data-view="overview">📊 Tổng quan</button>
     <button class="tab-btn" data-view="orders">📦 Đơn hàng <span class="tab-badge" id="badge-orders">0</span></button>
     <button class="tab-btn" data-view="batches">🧺 Lô hàng <span class="tab-badge" id="badge-batches">0</span></button>
+    <button class="tab-btn" data-view="deleted">🗑️ Đã xoá mềm <span class="tab-badge alert" id="badge-deleted">0</span></button>
     <button class="tab-btn" data-view="history">🕒 Lịch sử thay đổi <span class="tab-badge" id="badge-history">0</span></button>
     <button class="tab-btn" data-view="anomalies">⚠️ Bất thường <span class="tab-badge alert" id="badge-anomalies">0</span></button>
     <button class="tab-btn" data-view="report">📄 Báo cáo</button>
@@ -461,11 +471,23 @@ select:focus { border-color: var(--tide); }
     <p class="eyebrow">Phân tích</p>
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Sản phẩm bán chạy</span></div>
+        <div class="panel-head"><span class="panel-title">Sản phẩm bán chạy</span>
+          <div class="chip-group" id="products-sort-chips">
+            <button class="chip active" data-sort="revenue">Doanh thu</button>
+            <button class="chip" data-sort="qty">Số lượng</button>
+            <button class="chip" data-sort="name">Tên A-Z</button>
+          </div>
+        </div>
         <div class="panel-body" id="products-bars"></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Khách hàng hàng đầu</span></div>
+        <div class="panel-head"><span class="panel-title">Khách hàng hàng đầu</span>
+          <div class="chip-group" id="customers-sort-chips">
+            <button class="chip active" data-sort="revenue">Doanh thu</button>
+            <button class="chip" data-sort="count">Số đơn</button>
+            <button class="chip" data-sort="name">Tên A-Z</button>
+          </div>
+        </div>
         <div class="panel-body" id="customers-bars"></div>
       </div>
     </div>
@@ -477,7 +499,7 @@ select:focus { border-color: var(--tide); }
       </div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Tên lô</th><th class="text-right">Số đơn</th><th class="text-right">Huỷ</th><th class="text-right">SL hàng hoá</th><th class="text-right">Doanh thu</th></tr></thead>
+          <thead><tr><th>Tên lô</th><th class="text-right">Số đơn</th><th class="text-right">Huỷ</th><th class="text-right">Xoá mềm</th><th class="text-right">SL hàng hoá</th><th class="text-right">Doanh thu</th></tr></thead>
           <tbody id="batches-tbody"></tbody>
         </table>
       </div>
@@ -491,19 +513,17 @@ select:focus { border-color: var(--tide); }
         <div class="search-wrap">
           <input type="text" class="search-input" id="batch-search" placeholder="Tìm tên lô hàng...">
         </div>
-        <select id="batch-sort">
-          <option value="revenue_desc">Doanh thu cao → thấp</option>
-          <option value="count_desc">Nhiều đơn → ít đơn</option>
-          <option value="qty_desc">SL hàng hoá nhiều → ít</option>
-          <option value="date_desc">Gần đây nhất</option>
-          <option value="date_asc">Cũ nhất</option>
-        </select>
       </div>
       <div class="table-scroll">
         <table>
           <thead><tr>
-            <th>Tên lô</th><th class="text-right">Số đơn</th><th class="text-right">Huỷ</th>
-            <th class="text-right">SL hàng hoá</th><th class="text-right">Doanh thu</th><th>Khoảng thời gian</th>
+            <th class="sortable" data-sort="name">Tên lô</th>
+            <th class="sortable text-right" data-sort="count">Số đơn</th>
+            <th class="sortable text-right" data-sort="cancelled">Huỷ</th>
+            <th class="sortable text-right" data-sort="deletedCount">Xoá mềm</th>
+            <th class="sortable text-right" data-sort="totalQty">SL hàng hoá</th>
+            <th class="sortable text-right" data-sort="revenue">Doanh thu</th>
+            <th class="sortable" data-sort="lastDate">Khoảng thời gian</th>
           </tr></thead>
           <tbody id="batches-full-tbody"></tbody>
         </table>
@@ -512,6 +532,41 @@ select:focus { border-color: var(--tide); }
         <div class="icon">🧺</div><div class="msg">Không tìm thấy lô hàng phù hợp</div>
       </div>
       <div id="batches-count" style="padding:12px 18px; font-size:11.5px; color:var(--dim); border-top:1px solid var(--line)"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ SOFT-DELETED ORDERS ═══════════════ -->
+  <section class="view" id="view-deleted">
+    <div class="panel" style="border-color: rgba(251,113,133,.25)">
+      <div class="panel-head" style="background: rgba(251,113,133,.06)">
+        <span class="panel-title">Đơn hàng đã xoá mềm
+          <span class="sub">deleteFlag = true — không tính vào doanh thu, KPI, lô hàng hay sản phẩm bán chạy</span>
+        </span>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="deleted-search" placeholder="Tìm mã đơn, tên khách, lô hàng...">
+        </div>
+        <select id="deleted-sort">
+          <option value="updated_desc">Mới cập nhật</option>
+          <option value="created_desc">Mới tạo</option>
+          <option value="price_desc">Giá trị cao → thấp</option>
+          <option value="name_asc">Tên khách A → Z</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Mã đơn</th><th>Khách hàng</th><th>Lô</th>
+            <th class="text-right">Số tiền</th><th>Trạng thái gốc</th><th>Ngày tạo</th>
+          </tr></thead>
+          <tbody id="deleted-tbody"></tbody>
+        </table>
+      </div>
+      <div id="deleted-empty" class="empty-state hidden">
+        <div class="icon">🗑️</div><div class="msg">Chưa có đơn nào bị xoá mềm</div>
+      </div>
+      <div id="deleted-count" style="padding:12px 18px; font-size:11.5px; color:var(--dim); border-top:1px solid var(--line)"></div>
     </div>
   </section>
 
@@ -533,18 +588,24 @@ select:focus { border-color: var(--tide); }
         <select id="order-batch-filter">
           <option value="">Tất cả lô hàng</option>
         </select>
-        <select id="order-sort">
-          <option value="updated_desc">Mới cập nhật</option>
-          <option value="created_desc">Mới tạo</option>
-          <option value="price_desc">Giá trị cao → thấp</option>
-          <option value="price_asc">Giá trị thấp → cao</option>
+        <select id="order-payment-filter">
+          <option value="">Tất cả thanh toán</option>
+          <option value="TRANSFER_VERIFIED">CK đã xác nhận</option>
+          <option value="TRANSFER_UNVERIFIED">CK chưa xác nhận</option>
+          <option value="CASH">Tiền mặt</option>
         </select>
       </div>
       <div class="table-scroll">
         <table>
           <thead><tr>
-            <th>Mã đơn</th><th>Khách hàng</th><th>Địa chỉ</th><th>Lô</th>
-            <th class="text-right">Số tiền</th><th>Trạng thái</th><th>Thanh toán</th><th>Ngày tạo</th>
+            <th class="sortable" data-sort="id">Mã đơn</th>
+            <th class="sortable" data-sort="customerName">Khách hàng</th>
+            <th>Địa chỉ</th>
+            <th class="sortable" data-sort="batchId">Lô</th>
+            <th class="sortable text-right" data-sort="totalPrice">Số tiền</th>
+            <th class="sortable" data-sort="status">Trạng thái</th>
+            <th>Thanh toán</th>
+            <th class="sortable" data-sort="createdAt">Ngày tạo</th>
           </tr></thead>
           <tbody id="orders-tbody"></tbody>
         </table>
@@ -568,6 +629,7 @@ select:focus { border-color: var(--tide); }
           <button class="chip" data-type="NEW">Đơn mới</button>
           <button class="chip" data-type="CHANGED">Đổi thông tin</button>
           <button class="chip" data-type="PRICE_CHANGED">Đổi giá</button>
+          <button class="chip" data-type="SOFT_DELETED">Xoá mềm</button>
           <button class="chip" data-type="REMOVED">Đã xoá</button>
         </div>
       </div>
@@ -599,6 +661,7 @@ select:focus { border-color: var(--tide); }
           <button class="chip" data-type="REVENUE_DROP">DT sụt giảm</button>
           <button class="chip" data-type="DUPLICATE_SUSPECT">Nghi trùng</button>
           <button class="chip" data-type="STALE_PENDING">Tồn đọng</button>
+          <button class="chip" data-type="UNVERIFIED_TRANSFER">CK chưa xác nhận</button>
         </div>
       </div>
       <div class="anomaly-list" id="anomaly-list"></div>
@@ -675,14 +738,18 @@ const kpis = [
   { label:'Giá trị TB / đơn', value: fmtK(D.stats.avgOrderValue), sub: 'trung bình', icon:'📈' },
   { label:'Đã giao', value: D.stats.delivered.toLocaleString('vi-VN'), sub: fmtK(D.stats.deliveredRevenue), icon:'✅' },
   { label:'Chờ xử lý', value: D.stats.pending.toLocaleString('vi-VN'), sub:'đơn PENDING', icon:'⏳' },
-  { label:'Đã huỷ', value: D.stats.cancelled.toLocaleString('vi-VN'), sub:'đơn CANCELLED', icon:'✕' },
+  { label:'Đã xoá mềm', value: D.stats.deletedCount.toLocaleString('vi-VN'), sub:'không tính vào số liệu', icon:'🗑️', view:'deleted', warn: D.stats.deletedCount > 0 },
+  { label:'CK chưa xác nhận', value: D.stats.transferUnverified.toLocaleString('vi-VN'), sub: fmt(D.stats.transferUnverifiedRevenue), icon:'🏦', view:'anomalies', warn: D.stats.transferUnverified > 0 },
 ];
 document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-  <div class="kpi-card"><span class="kpi-icon">${k.icon}</span>
+  <div class="kpi-card" ${k.view?`data-jump="${k.view}" style="cursor:pointer"`:''}><span class="kpi-icon">${k.icon}</span>
     <p class="kpi-label">${k.label}</p>
-    <p class="kpi-value">${k.value}</p>
+    <p class="kpi-value" ${k.warn?'style="color:var(--rust)"':''}>${k.value}</p>
     <p class="kpi-sub">${k.sub}</p>
   </div>`).join('');
+document.querySelectorAll('#kpi-grid [data-jump]').forEach(card => {
+  card.addEventListener('click', () => switchView(card.dataset.jump));
+});
 
 /* ════════════════ CHARTS ════════════════ */
 Chart.defaults.color = '#8fa3ad';
@@ -728,21 +795,51 @@ new Chart(document.getElementById('chartPayment'), {
 });
 
 /* ════════════════ PRODUCT / CUSTOMER BARS ════════════════ */
-const maxProdRev = D.topProducts[0]?.revenue || 1;
-document.getElementById('products-bars').innerHTML = D.topProducts.map((p,i) => `
-  <div class="bar-row">
-    <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(p.name)}</span>
-    <div class="bar-track"><div class="bar-fill" style="width:${(p.revenue/maxProdRev*100).toFixed(1)}%"></div></div>
-    <span class="bar-val">${fmtK(p.revenue)}</span>
-  </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+let productsSortKey = 'revenue';
+function renderProductsBars() {
+  let rows = D.topProducts.slice();
+  if (productsSortKey === 'name') rows.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+  else rows.sort((a,b) => (b[productsSortKey]||0) - (a[productsSortKey]||0));
+  const maxVal = Math.max(...rows.map(r => productsSortKey === 'name' ? r.revenue : r[productsSortKey]), 1);
+  document.getElementById('products-bars').innerHTML = rows.map((p,i) => `
+    <div class="bar-row">
+      <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(p.name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${((productsSortKey==='name'?p.revenue:p[productsSortKey])/maxVal*100).toFixed(1)}%"></div></div>
+      <span class="bar-val">${productsSortKey === 'qty' ? p.qty.toLocaleString('vi-VN') : fmtK(p.revenue)}</span>
+    </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+}
+document.querySelectorAll('#products-sort-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#products-sort-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    productsSortKey = chip.dataset.sort;
+    renderProductsBars();
+  });
+});
+renderProductsBars();
 
-const maxCustRev = D.topCustomers[0]?.revenue || 1;
-document.getElementById('customers-bars').innerHTML = D.topCustomers.map((c,i) => `
-  <div class="bar-row">
-    <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(c.name)}</span>
-    <div class="bar-track"><div class="bar-fill" style="width:${(c.revenue/maxCustRev*100).toFixed(1)}%; background:linear-gradient(90deg,#38bdf8,#0284c7)"></div></div>
-    <span class="bar-val">${c.count} đơn</span>
-  </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+let customersSortKey = 'revenue';
+function renderCustomersBars() {
+  let rows = D.topCustomers.slice();
+  if (customersSortKey === 'name') rows.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+  else rows.sort((a,b) => (b[customersSortKey]||0) - (a[customersSortKey]||0));
+  const maxVal = Math.max(...rows.map(r => customersSortKey === 'name' ? r.revenue : r[customersSortKey]), 1);
+  document.getElementById('customers-bars').innerHTML = rows.map((c,i) => `
+    <div class="bar-row">
+      <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(c.name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${((customersSortKey==='name'?c.revenue:c[customersSortKey])/maxVal*100).toFixed(1)}%; background:linear-gradient(90deg,#38bdf8,#0284c7)"></div></div>
+      <span class="bar-val">${customersSortKey === 'count' ? c.count + ' đơn' : fmtK(c.revenue)}</span>
+    </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+}
+document.querySelectorAll('#customers-sort-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#customers-sort-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    customersSortKey = chip.dataset.sort;
+    renderCustomersBars();
+  });
+});
+renderCustomersBars();
 
 /* ════════════════ BATCHES (overview top 15) ════════════════ */
 document.getElementById('batches-tbody').innerHTML = D.topBatches.map(b => `
@@ -750,6 +847,7 @@ document.getElementById('batches-tbody').innerHTML = D.topBatches.map(b => `
     <td class="ellipsis" style="max-width:340px" title="${esc(b.name)}">${esc(b.name)}</td>
     <td class="text-right text-mist text-mono">${b.count}</td>
     <td class="text-right text-mono ${b.cancelled?'money neg':'text-dim'}">${b.cancelled||'—'}</td>
+    <td class="text-right text-mono ${b.deletedCount?'money neg':'text-dim'}">${b.deletedCount||'—'}</td>
     <td class="text-right text-mono text-mist">${b.totalQty?b.totalQty.toLocaleString('vi-VN'):'—'}</td>
     <td class="text-right money">${fmtK(b.revenue)}</td>
   </tr>`).join('');
@@ -767,25 +865,28 @@ function switchView(view) {
 
 /* ════════════════ BATCHES (full tab) ════════════════ */
 const batchesByName = new Map(D.batches.map(b => [b.name, b]));
-let batchFilterState = { q:'', sort:'revenue_desc' };
+let batchFilterState = { q:'', sortKey:'revenue', sortDir:'desc' };
 
 function renderBatchesFull() {
   const ql = batchFilterState.q.toLowerCase().trim();
   let rows = D.batches.filter(b => !ql || b.name.toLowerCase().includes(ql));
-  const sort = batchFilterState.sort;
-  rows = rows.slice().sort((a,b) => {
-    if (sort === 'revenue_desc') return b.revenue - a.revenue;
-    if (sort === 'count_desc') return b.count - a.count;
-    if (sort === 'qty_desc') return b.totalQty - a.totalQty;
-    if (sort === 'date_desc') return (b.lastDate||0) - (a.lastDate||0);
-    if (sort === 'date_asc') return (a.firstDate||0) - (b.firstDate||0);
-    return 0;
+  const { sortKey, sortDir } = batchFilterState;
+  const mul = sortDir === 'asc' ? 1 : -1;
+  rows = rows.slice().sort((a, b) => {
+    if (sortKey === 'name') {
+      return a.name.localeCompare(b.name, 'vi') * mul;
+    }
+    if (sortKey === 'lastDate') {
+      return ((a.lastDate||0) - (b.lastDate||0)) * mul;
+    }
+    return ((a[sortKey]||0) - (b[sortKey]||0)) * mul;
   });
   document.getElementById('batches-full-tbody').innerHTML = rows.map(b => `
     <tr data-batch="${esc(b.name)}">
-      <td class="ellipsis" style="max-width:320px" title="${esc(b.name)}">${esc(b.name)}</td>
+      <td class="ellipsis" style="max-width:300px" title="${esc(b.name)}">${esc(b.name)}</td>
       <td class="text-right text-mist text-mono">${b.count}</td>
       <td class="text-right text-mono ${b.cancelled?'money neg':'text-dim'}">${b.cancelled||'—'}</td>
+      <td class="text-right text-mono ${b.deletedCount?'money neg':'text-dim'}">${b.deletedCount||'—'}</td>
       <td class="text-right text-mono text-mist">${b.totalQty?b.totalQty.toLocaleString('vi-VN'):'—'}</td>
       <td class="text-right money">${fmt(b.revenue)}</td>
       <td class="text-dim text-mono" style="font-size:11.5px">${b.firstDate?fmtDate(b.firstDate)+' → '+fmtDate(b.lastDate):'—'}</td>
@@ -793,9 +894,26 @@ function renderBatchesFull() {
   document.getElementById('batches-empty').classList.toggle('hidden', rows.length > 0);
   document.getElementById('batches-count').textContent = `${rows.length.toLocaleString('vi-VN')} / ${D.batches.length.toLocaleString('vi-VN')} lô hàng`;
   document.querySelectorAll('#batches-full-tbody tr').forEach(tr => tr.addEventListener('click', () => openBatchDrawer(tr.dataset.batch)));
+
+  document.querySelectorAll('#view-batches thead th.sortable').forEach(th => {
+    th.classList.toggle('sort-active', th.dataset.sort === sortKey);
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.sort === sortKey) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
 }
 document.getElementById('batch-search').addEventListener('input', e => { batchFilterState.q = e.target.value; renderBatchesFull(); });
-document.getElementById('batch-sort').addEventListener('change', e => { batchFilterState.sort = e.target.value; renderBatchesFull(); });
+document.querySelectorAll('#view-batches thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (batchFilterState.sortKey === key) {
+      batchFilterState.sortDir = batchFilterState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      batchFilterState.sortKey = key;
+      batchFilterState.sortDir = key === 'name' ? 'asc' : 'desc';
+    }
+    renderBatchesFull();
+  });
+});
 renderBatchesFull();
 
 /* ════════════════ BATCH DETAIL DRAWER ════════════════ */
@@ -841,33 +959,90 @@ function filterOrdersByBatch(batchName) {
   renderOrders();
 }
 
+/* ════════════════ SOFT-DELETED ORDERS TAB ════════════════ */
+const deletedOrdersForUI = D.orders.filter(o => o.deleted);
+document.getElementById('badge-deleted').textContent = deletedOrdersForUI.length;
+let deletedFilterState = { q:'', sort:'updated_desc' };
+
+function renderDeleted() {
+  const ql = deletedFilterState.q.toLowerCase().trim();
+  let rows = deletedOrdersForUI.filter(o => {
+    if (!ql) return true;
+    return [o.id, o.customerName, o.batchId].join(' ').toLowerCase().includes(ql);
+  });
+  const sort = deletedFilterState.sort;
+  rows = rows.slice().sort((a,b) => {
+    if (sort === 'updated_desc') return (b.updatedAt||0) - (a.updatedAt||0);
+    if (sort === 'created_desc') return (b.createdAt||0) - (a.createdAt||0);
+    if (sort === 'price_desc') return (b.totalPrice||0) - (a.totalPrice||0);
+    if (sort === 'name_asc') return (a.customerName||'').localeCompare(b.customerName||'', 'vi');
+    return 0;
+  });
+  document.getElementById('deleted-tbody').innerHTML = rows.map(o => `
+    <tr data-id="${esc(o.id)}">
+      <td class="text-mono" style="color:var(--coral); font-size:12px">${esc(o.id)}</td>
+      <td>${esc(o.customerName)}</td>
+      <td class="ellipsis text-dim" style="max-width:160px; font-size:11.5px" title="${esc(o.batchId)}">${esc(o.batchId)}</td>
+      <td class="text-right money neg">${fmt(o.totalPrice)}</td>
+      <td><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></td>
+      <td class="text-dim text-mono" style="font-size:11.5px">${fmtDate(o.createdAt)}</td>
+    </tr>`).join('');
+  document.getElementById('deleted-empty').classList.toggle('hidden', rows.length > 0);
+  document.getElementById('deleted-count').textContent = `${rows.length.toLocaleString('vi-VN')} đơn đã xoá mềm`;
+  document.querySelectorAll('#deleted-tbody tr').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
+}
+document.getElementById('deleted-search').addEventListener('input', e => { deletedFilterState.q = e.target.value; renderDeleted(); });
+document.getElementById('deleted-sort').addEventListener('change', e => { deletedFilterState.sort = e.target.value; renderDeleted(); });
+renderDeleted();
+
 /* ════════════════ ORDERS TABLE ════════════════ */
 const ordersById = new Map(D.orders.map(o => [o.id, o]));
-let orderFilterState = { q:'', status:'', batch:'', sort:'updated_desc' };
+// Tab "Đơn hàng" chỉ hiển thị đơn ĐANG HOẠT ĐỘNG (không xoá mềm) — đơn xoá mềm xem ở tab riêng
+const liveOrdersForUI = D.orders.filter(o => !o.deleted);
+let orderFilterState = { q:'', status:'', batch:'', payment:'', sortKey:'updatedAt', sortDir:'desc' };
 
 // Populate batch dropdown (sorted by revenue, same order as batches list)
 const batchSelect = document.getElementById('order-batch-filter');
 batchSelect.innerHTML = '<option value="">Tất cả lô hàng</option>' +
   D.batches.map(b => `<option value="${esc(b.name)}">${esc(b.name)} (${b.count})</option>`).join('');
 
+function paymentBadge(o) {
+  if (o.paymentMethod !== 'TRANSFER') return `<span class="text-mist">${PAY_VI[o.paymentMethod]||o.paymentMethod}</span>`;
+  if (!o.paymentVerifiedKnown) return `<span class="text-mist">Chuyển khoản</span>`;
+  return o.paymentVerified
+    ? `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ CK đã xác nhận</span>`
+    : `<span class="badge" style="background:rgba(251,146,60,.12); color:var(--rust)">⏳ CK chưa xác nhận</span>`;
+}
+
+function applySort(rows, key, dir) {
+  const mul = dir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    let av = a[key], bv = b[key];
+    if (key === 'customerName' || key === 'batchId' || key === 'id' || key === 'status') {
+      av = (av || '').toString().toLowerCase();
+      bv = (bv || '').toString().toLowerCase();
+      return av < bv ? -1 * mul : av > bv ? 1 * mul : 0;
+    }
+    av = av || 0; bv = bv || 0;
+    return (av - bv) * mul;
+  });
+}
+
 function renderOrders() {
-  const { q, status, batch, sort } = orderFilterState;
+  const { q, status, batch, payment, sortKey, sortDir } = orderFilterState;
   const ql = q.toLowerCase().trim();
-  let rows = D.orders.filter(o => {
+  let rows = liveOrdersForUI.filter(o => {
     if (status && o.status !== status) return false;
     if (batch && o.batchId !== batch) return false;
+    if (payment === 'TRANSFER_VERIFIED' && !(o.paymentMethod === 'TRANSFER' && o.paymentVerified)) return false;
+    if (payment === 'TRANSFER_UNVERIFIED' && !(o.paymentMethod === 'TRANSFER' && !o.paymentVerified)) return false;
+    if (payment === 'CASH' && o.paymentMethod !== 'CASH') return false;
     if (!ql) return true;
     const hay = [o.id, o.customerName, o.address, o.batchId, o.customerPhone, ...(o.items||[]).map(i=>i.name)]
       .join(' ').toLowerCase();
     return hay.includes(ql);
   });
-  rows.sort((a,b) => {
-    if (sort === 'updated_desc') return (b.updatedAt||0) - (a.updatedAt||0);
-    if (sort === 'created_desc') return (b.createdAt||0) - (a.createdAt||0);
-    if (sort === 'price_desc') return (b.totalPrice||0) - (a.totalPrice||0);
-    if (sort === 'price_asc') return (a.totalPrice||0) - (b.totalPrice||0);
-    return 0;
-  });
+  rows = applySort(rows, sortKey, sortDir);
   const display = rows.slice(0, 300);
   document.getElementById('orders-tbody').innerHTML = display.map(o => `
     <tr data-id="${esc(o.id)}">
@@ -877,31 +1052,54 @@ function renderOrders() {
       <td class="ellipsis text-dim" style="max-width:140px; font-size:11.5px" title="${esc(o.batchId)}">${esc(o.batchId)}</td>
       <td class="text-right money">${fmt(o.totalPrice)}</td>
       <td><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></td>
-      <td class="text-mist">${PAY_VI[o.paymentMethod]||o.paymentMethod}</td>
+      <td>${paymentBadge(o)}</td>
       <td class="text-dim text-mono" style="font-size:11.5px">${fmtDate(o.createdAt)}</td>
     </tr>`).join('');
   document.getElementById('orders-empty').classList.toggle('hidden', rows.length > 0);
   document.getElementById('orders-count').textContent =
-    `Hiển thị ${display.length.toLocaleString('vi-VN')} / ${rows.length.toLocaleString('vi-VN')} đơn (tổng ${D.orders.length.toLocaleString('vi-VN')})`;
+    `Hiển thị ${display.length.toLocaleString('vi-VN')} / ${rows.length.toLocaleString('vi-VN')} đơn (tổng ${liveOrdersForUI.length.toLocaleString('vi-VN')})`;
   document.querySelectorAll('#orders-tbody tr').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
+
+  // Cập nhật trạng thái icon sort trên header
+  document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
+    th.classList.toggle('sort-active', th.dataset.sort === sortKey);
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.sort === sortKey) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
 }
 document.getElementById('order-search').addEventListener('input', e => { orderFilterState.q = e.target.value; renderOrders(); });
 document.getElementById('order-status-filter').addEventListener('change', e => { orderFilterState.status = e.target.value; renderOrders(); });
 document.getElementById('order-batch-filter').addEventListener('change', e => { orderFilterState.batch = e.target.value; renderOrders(); });
-document.getElementById('order-sort').addEventListener('change', e => { orderFilterState.sort = e.target.value; renderOrders(); });
+document.getElementById('order-payment-filter').addEventListener('change', e => { orderFilterState.payment = e.target.value; renderOrders(); });
+document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (orderFilterState.sortKey === key) {
+      orderFilterState.sortDir = orderFilterState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      orderFilterState.sortKey = key;
+      orderFilterState.sortDir = (key === 'customerName' || key === 'id' || key === 'batchId' || key === 'status') ? 'asc' : 'desc';
+    }
+    renderOrders();
+  });
+});
 renderOrders();
 
 /* ════════════════ ORDER DETAIL DRAWER ════════════════ */
 const eventsByOrderId = {};
 for (const ev of D.changeEvents) { (eventsByOrderId[ev.orderId] = eventsByOrderId[ev.orderId] || []).push(ev); }
 
+const BOOL_VI = { true: 'Có', false: 'Không' };
 function diffLabel(ev) {
   if (ev.type === 'NEW') return `<span style="color:var(--kelp); font-weight:600">Đơn hàng mới</span> · ${fmt(ev.to)}`;
   if (ev.type === 'REMOVED') return `<span style="color:var(--coral); font-weight:600">Đơn bị xoá khỏi hệ thống</span>`;
+  if (ev.type === 'SOFT_DELETED') return `<span style="color:var(--coral); font-weight:600">🗑️ Đơn bị xoá mềm</span> (deleteFlag)`;
+  if (ev.type === 'SOFT_RESTORED') return `<span style="color:var(--kelp); font-weight:600">↩️ Đơn được khôi phục</span> (deleteFlag)`;
   const label = ev.type === 'PRICE_CHANGED' ? esc(ev.fieldLabel) : esc(ev.fieldLabel || ev.field);
-  const fromVal = ev.isMoney ? fmt(ev.from) : (STATUS_VI[ev.from] || PAY_VI[ev.from] || esc(ev.from) || '(trống)');
-  const toVal = ev.isMoney ? fmt(ev.to) : (STATUS_VI[ev.to] || PAY_VI[ev.to] || esc(ev.to) || '(trống)');
-  return `${label}: <span class="tl-from">${fromVal}</span> <span class="tl-arrow">→</span> <span class="tl-to">${toVal}</span>`;
+  const mapVal = v => ev.isMoney ? fmt(v)
+    : (typeof v === 'boolean' ? BOOL_VI[v]
+    : (STATUS_VI[v] || PAY_VI[v] || esc(v) || '(trống)'));
+  return `${label}: <span class="tl-from">${mapVal(ev.from)}</span> <span class="tl-arrow">→</span> <span class="tl-to">${mapVal(ev.to)}</span>`;
 }
 
 function openOrderDrawer(id) {
@@ -916,12 +1114,13 @@ function openOrderDrawer(id) {
 
   const timelineHtml = events.length ? events.map(ev => `
     <div class="tl-item">
-      <div class="tl-dot ${ev.type==='NEW'?'new':ev.type==='REMOVED'?'removed':''}"></div>
+      <div class="tl-dot ${ev.type==='NEW'||ev.type==='SOFT_RESTORED'?'new':ev.type==='REMOVED'||ev.type==='SOFT_DELETED'?'removed':''}"></div>
       <div class="tl-date">${ev.date}</div>
       <div class="tl-content">${diffLabel(ev)}</div>
     </div>`).join('') : '<p class="text-dim" style="font-size:12.5px">Không có thay đổi nào được ghi nhận giữa các kỳ backup</p>';
 
   document.getElementById('drawer-body').innerHTML = `
+    ${o.deleted ? '<div class="drawer-section"><div class="insight-card" style="border-color:rgba(251,113,133,.3); background:rgba(251,113,133,.06)"><span class="insight-icon">🗑️</span><span class="insight-text" style="color:var(--coral)">Đơn này đã bị <b>xoá mềm</b> (deleteFlag=true) — không tính vào doanh thu, KPI hay số liệu lô hàng.</span></div></div>' : ''}
     <div class="drawer-section">
       <h4>Thông tin đơn</h4>
       <div class="drawer-row"><span>Khách hàng</span><span>${esc(o.customerName)}</span></div>
@@ -929,7 +1128,7 @@ function openOrderDrawer(id) {
       <div class="drawer-row"><span>Địa chỉ</span><span style="text-align:right; max-width:240px">${esc(o.address)}</span></div>
       <div class="drawer-row"><span>Lô hàng</span><span style="text-align:right; max-width:240px; font-size:11.5px" class="text-mist">${esc(o.batchId)}</span></div>
       <div class="drawer-row"><span>Trạng thái</span><span><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></span></div>
-      <div class="drawer-row"><span>Thanh toán</span><span>${PAY_VI[o.paymentMethod]||o.paymentMethod}</span></div>
+      <div class="drawer-row"><span>Thanh toán</span><span>${paymentBadge(o)}</span></div>
       <div class="drawer-row"><span>Ngày tạo</span><span class="text-mono">${fmtDateTime(o.createdAt)}</span></div>
       <div class="drawer-row" style="border-bottom:none"><span>Tổng tiền</span><span class="money">${fmt(o.totalPrice)}</span></div>
     </div>
@@ -969,7 +1168,7 @@ function renderHistory() {
   document.getElementById('history-list').innerHTML = rows.map(ev => `
     <div class="hist-row" data-id="${esc(ev.orderId)}">
       <span class="text-mono text-dim" style="font-size:11px">${ev.date}</span>
-      <span><span class="hist-type ${ev.type}">${ev.type==='NEW'?'Mới':ev.type==='REMOVED'?'Đã xoá':ev.type==='PRICE_CHANGED'?'Đổi giá':'Cập nhật'}</span> &nbsp; ${diffLabel(ev)}</span>
+      <span><span class="hist-type ${ev.type}">${ev.type==='NEW'?'Mới':ev.type==='REMOVED'?'Đã xoá':ev.type==='PRICE_CHANGED'?'Đổi giá':ev.type==='SOFT_DELETED'?'Xoá mềm':ev.type==='SOFT_RESTORED'?'Khôi phục':'Cập nhật'}</span> &nbsp; ${diffLabel(ev)}</span>
       <span class="ellipsis">${esc(ev.customerName)}</span>
       <span class="text-mono text-mist" style="font-size:11.5px">${esc(ev.orderId)}</span>
     </div>`).join('');
@@ -988,7 +1187,7 @@ document.querySelectorAll('#history-type-chips .chip').forEach(chip => {
 renderHistory();
 
 /* ════════════════ ANOMALIES VIEW ════════════════ */
-const ANOMALY_ICON = { PRICE_OUTLIER:'💸', ORDER_VALUE_HIGH:'🧾', REVENUE_SPIKE:'📈', REVENUE_DROP:'📉', DUPLICATE_SUSPECT:'🪞', STALE_PENDING:'🐌' };
+const ANOMALY_ICON = { PRICE_OUTLIER:'💸', ORDER_VALUE_HIGH:'🧾', REVENUE_SPIKE:'📈', REVENUE_DROP:'📉', DUPLICATE_SUSPECT:'🪞', STALE_PENDING:'🐌', UNVERIFIED_TRANSFER:'🏦' };
 let anomalyFilter = { sev:'', type:'' };
 function renderAnomalies() {
   let rows = D.anomalies.filter(a => (!anomalyFilter.sev || a.severity === anomalyFilter.sev) && (!anomalyFilter.type || a.type === anomalyFilter.type));
