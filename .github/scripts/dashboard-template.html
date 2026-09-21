@@ -218,6 +218,54 @@ nav.tabs::-webkit-scrollbar { display: none; }
   font-weight: 600;
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   WEEKEND VS WEEKDAY SUMMARY & BADGES
+   ════════════════════════════════════════════════════════════ */
+.weekend-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.wk-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color .15s;
+}
+.wk-stat:hover { border-color: var(--dim); }
+.wk-icon { font-size: 22px; flex-shrink: 0; }
+.wk-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--dim);
+  font-weight: 700;
+}
+.wk-val {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--foam);
+  margin-top: 2px;
+}
+.wk-sub {
+  font-size: 11px;
+  color: var(--mist);
+  margin-top: 2px;
+}
+@media (max-width: 980px) {
+  .weekend-summary-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .weekend-summary-bar { grid-template-columns: 1fr; }
+}
+
 /* ════════════════════════════════════════════════════════════
    LAYOUT
    ════════════════════════════════════════════════════════════ */
@@ -564,10 +612,55 @@ select:focus { border-color: var(--tide); }
     <p class="eyebrow">Chỉ số cốt lõi</p>
     <div class="kpi-grid" id="kpi-grid"></div>
 
-    <p class="eyebrow">Doanh thu</p>
+    <p class="eyebrow">Doanh thu &amp; Phân tích Cuối tuần (T7, CN)</p>
+
+    <!-- Thẻ thống kê So sánh Cuối tuần vs Ngày thường -->
+    <div class="weekend-summary-bar">
+      <div class="wk-stat" style="border-left: 3px solid var(--sand)">
+        <span class="wk-icon">🏖️</span>
+        <div>
+          <div class="wk-title">Cuối tuần (Thứ 7 &amp; CN)</div>
+          <div class="wk-val" id="wk-weekend-rev" style="color:var(--sand)">—</div>
+          <div class="wk-sub" id="wk-weekend-sub">—</div>
+        </div>
+      </div>
+      <div class="wk-stat" style="border-left: 3px solid var(--tide)">
+        <span class="wk-icon">💼</span>
+        <div>
+          <div class="wk-title">Ngày thường (Thứ 2 - Thứ 6)</div>
+          <div class="wk-val" id="wk-weekday-rev" style="color:var(--tide)">—</div>
+          <div class="wk-sub" id="wk-weekday-sub">—</div>
+        </div>
+      </div>
+      <div class="wk-stat">
+        <span class="wk-icon">⚖️</span>
+        <div>
+          <div class="wk-title">Tỷ trọng Cuối tuần</div>
+          <div class="wk-val" id="wk-share-rev">—</div>
+          <div class="wk-sub" id="wk-share-sub">—</div>
+        </div>
+      </div>
+      <div class="wk-stat" style="border-left: 3px solid var(--coral)">
+        <span class="wk-icon">📊</span>
+        <div>
+          <div class="wk-title">Mức Trung bình</div>
+          <div class="wk-val" id="wk-avg-val" style="color:var(--coral)">—</div>
+          <div class="wk-sub" id="wk-avg-sub">—</div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Doanh thu theo ngày<span class="sub">90 ngày gần nhất</span></span></div>
+        <div class="panel-head">
+          <span class="panel-title" id="time-chart-title">Doanh thu theo ngày
+            <span class="sub" id="time-chart-sub">🟨 Cuối tuần (T7, CN) · 🟦 Ngày thường · 🟥 Đường TB</span>
+          </span>
+          <div class="chip-group" id="time-view-chips">
+            <button class="chip active" data-timeview="daily">Theo ngày</button>
+            <button class="chip" data-timeview="monthly">Theo tháng</button>
+          </div>
+        </div>
         <div class="panel-body"><div class="chart-box"><canvas id="chartDaily"></canvas></div></div>
       </div>
       <div class="panel">
@@ -577,7 +670,11 @@ select:focus { border-color: var(--tide); }
     </div>
     <div class="grid-2b">
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Doanh thu theo tuần<span class="sub">16 tuần</span></span></div>
+        <div class="panel-head">
+          <span class="panel-title">Doanh thu theo tuần
+            <span class="sub">Tách rõ Cuối tuần (T7, CN) vs Ngày thường + Đường TB tuần</span>
+          </span>
+        </div>
         <div class="panel-body"><div class="chart-box sm"><canvas id="chartWeekly"></canvas></div></div>
       </div>
       <div class="panel">
@@ -1103,48 +1200,357 @@ Chart.defaults.color = '#8fa3ad';
 Chart.defaults.borderColor = '#1e2d3d';
 Chart.defaults.font.family = "'Lexend', sans-serif";
 const PALETTE = ['#2dd4bf','#38bdf8','#fbbf24','#fb7185','#a78bfa','#34d399','#fb923c'];
+const DOW_SHORT_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const DOW_FULL_VI = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
+let timeViewMode = 'daily'; // 'daily' | 'monthly'
 let chartDailyInstance = null;
 let chartStatusInstance = null;
 let chartWeeklyInstance = null;
 let chartPaymentInstance = null;
 
 function renderCharts() {
-  // Aggregate daily revenue in current range
-  const dailyMap = {};
   const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+
+  // 1. Phân loại theo ngày, tuần, tháng và tách Cuối tuần (T7 & CN)
+  const dailyMap = {};
+  const weeklyMap = {};
+  const monthlyMap = {};
+
+  let totalWeekendRev = 0;
+  let totalWeekendOrders = 0;
+  let totalWeekdayRev = 0;
+  let totalWeekdayOrders = 0;
+
   for (const o of active) {
     const t = getOrderTs(o);
     if (!t) continue;
-    const d = new Date(t).toISOString().slice(0, 10);
-    dailyMap[d] = (dailyMap[d] || 0) + (o.totalPrice || 0);
-  }
-  const dailyLabels = Object.keys(dailyMap).sort().slice(-90);
-  const dailyData = dailyLabels.map(k => dailyMap[k]);
+    const d = new Date(t);
+    const dayOfWeek = d.getDay(); // 0=CN, 6=T7
+    const isWk = (dayOfWeek === 0 || dayOfWeek === 6);
+    const price = o.totalPrice || 0;
 
-  // Chart Daily
+    if (isWk) {
+      totalWeekendRev += price;
+      totalWeekendOrders += 1;
+    } else {
+      totalWeekdayRev += price;
+      totalWeekdayOrders += 1;
+    }
+
+    // Daily
+    const dateKey = d.toISOString().slice(0, 10);
+    if (!dailyMap[dateKey]) {
+      dailyMap[dateKey] = { total: 0, weekend: 0, weekday: 0, count: 0, isWk, dow: DOW_SHORT_VI[dayOfWeek], dowFull: DOW_FULL_VI[dayOfWeek] };
+    }
+    dailyMap[dateKey].total += price;
+    dailyMap[dateKey].count += 1;
+    if (isWk) dailyMap[dateKey].weekend += price;
+    else dailyMap[dateKey].weekday += price;
+
+    // Monthly
+    const monthKey = d.toISOString().slice(0, 7); // YYYY-MM
+    if (!monthlyMap[monthKey]) {
+      monthlyMap[monthKey] = { total: 0, weekend: 0, weekday: 0, count: 0, label: `Tháng ${d.getMonth()+1}/${d.getFullYear()}` };
+    }
+    monthlyMap[monthKey].total += price;
+    monthlyMap[monthKey].count += 1;
+    if (isWk) monthlyMap[monthKey].weekend += price;
+    else monthlyMap[monthKey].weekday += price;
+
+    // Weekly (thứ Hai đầu tuần)
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const weekKey = mon.toISOString().slice(0, 10);
+    if (!weeklyMap[weekKey]) {
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      weeklyMap[weekKey] = {
+        total: 0, weekend: 0, weekday: 0, count: 0,
+        label: `${fmtDate(mon.getTime())} → ${fmtDate(sun.getTime())}`
+      };
+    }
+    weeklyMap[weekKey].total += price;
+    weeklyMap[weekKey].count += 1;
+    if (isWk) weeklyMap[weekKey].weekend += price;
+    else weeklyMap[weekKey].weekday += price;
+  }
+
+  const grandTotal = totalWeekendRev + totalWeekdayRev;
+  const grandOrders = totalWeekendOrders + totalWeekdayOrders;
+
+  // 2. Cập nhật Thẻ Tóm tắt Cuối tuần vs Ngày thường
+  document.getElementById('wk-weekend-rev').textContent = fmtK(totalWeekendRev);
+  document.getElementById('wk-weekend-sub').textContent = `${fmt(totalWeekendRev)} (${totalWeekendOrders} đơn)`;
+
+  document.getElementById('wk-weekday-rev').textContent = fmtK(totalWeekdayRev);
+  document.getElementById('wk-weekday-sub').textContent = `${fmt(totalWeekdayRev)} (${totalWeekdayOrders} đơn)`;
+
+  const wkShare = grandTotal > 0 ? (totalWeekendRev / grandTotal * 100).toFixed(1) : '0';
+  document.getElementById('wk-share-rev').textContent = `${wkShare}% doanh thu`;
+  document.getElementById('wk-share-sub').textContent = `${grandOrders > 0 ? (totalWeekendOrders/grandOrders*100).toFixed(1) : 0}% tổng đơn hàng`;
+
+  const dailyKeys = Object.keys(dailyMap).sort().slice(-90);
+  const avgDaily = dailyKeys.length ? (grandTotal / dailyKeys.length) : 0;
+  const weeklyKeys = Object.keys(weeklyMap).sort().slice(-16);
+  const avgWeekly = weeklyKeys.length ? (grandTotal / weeklyKeys.length) : 0;
+  const monthlyKeys = Object.keys(monthlyMap).sort();
+  const avgMonthly = monthlyKeys.length ? (grandTotal / monthlyKeys.length) : 0;
+
+  document.getElementById('wk-avg-val').textContent = `${fmtK(avgDaily)} / ngày`;
+  document.getElementById('wk-avg-sub').textContent = `TB tuần: ${fmtK(avgWeekly)}`;
+
+  // 3. Biểu đồ 1: Doanh thu theo Ngày / Tháng (Toggle được)
   if (chartDailyInstance) chartDailyInstance.destroy();
-  chartDailyInstance = new Chart(document.getElementById('chartDaily'), {
+
+  if (timeViewMode === 'daily') {
+    document.getElementById('time-chart-title').innerHTML = `Doanh thu theo ngày <span class="sub">🟨 Cuối tuần (T7, CN) · 🟦 Ngày thường · 🟥 Đường TB ngày (${fmtK(avgDaily)})</span>`;
+
+    const labels = dailyKeys.map(k => {
+      const item = dailyMap[k];
+      const d = new Date(k + 'T12:00:00');
+      return `${fmtDate(d.getTime())} (${item.dow})`;
+    });
+    const revData = dailyKeys.map(k => dailyMap[k].total);
+    const bgColors = dailyKeys.map(k => dailyMap[k].isWk ? 'rgba(251, 191, 36, 0.85)' : 'rgba(45, 212, 191, 0.45)');
+    const borderColors = dailyKeys.map(k => dailyMap[k].isWk ? '#fbbf24' : '#2dd4bf');
+
+    chartDailyInstance = new Chart(document.getElementById('chartDaily'), {
+      type: 'bar',
+      data: {
+        labels: labels.length ? labels : ['Không có'],
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Doanh thu ngày',
+            data: revData.length ? revData : [0],
+            backgroundColor: bgColors,
+            borderColor: borderColors,
+            borderWidth: 1.5,
+            borderRadius: 3,
+            maxBarThickness: 14,
+            order: 2
+          },
+          {
+            type: 'line',
+            label: `Trung bình ngày (${fmtK(avgDaily)})`,
+            data: dailyKeys.map(() => avgDaily),
+            borderColor: '#fb7185',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true, position: 'top', align: 'end',
+            labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8,
+              filter: (item) => item.text.includes('Trung bình')
+            }
+          },
+          tooltip: {
+            callbacks: {
+              title: (items) => {
+                const idx = items[0].dataIndex;
+                const k = dailyKeys[idx];
+                if (!k) return '';
+                const item = dailyMap[k];
+                const d = new Date(k + 'T12:00:00');
+                const badge = item.isWk ? '🔥 [CUỐI TUẦN: T7/CN]' : '💼 [NGÀY THƯỜNG: T2-T6]';
+                return `${item.dowFull}, ${fmtDate(d.getTime())} · ${badge}`;
+              },
+              label: (c) => {
+                if (c.dataset.type === 'line') return `📊 Giá trị Trung bình: ${fmt(c.raw)}`;
+                const idx = c.dataIndex;
+                const k = dailyKeys[idx];
+                const item = dailyMap[k];
+                return `💰 Doanh thu: ${fmt(c.raw)} (${item.count} đơn)`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { font: { size: 9 }, maxRotation: 60, autoSkip: true, maxTicksLimit: 14 } },
+          y: { ticks: { callback: v => fmtK(v), font: { size: 10 } } }
+        }
+      }
+    });
+
+  } else {
+    // Mode: Theo tháng
+    document.getElementById('time-chart-title').innerHTML = `Doanh thu theo tháng <span class="sub">Tách rõ Ngày thường vs Cuối tuần + Đường TB (${fmtK(avgMonthly)})</span>`;
+
+    const labels = monthlyKeys.map(k => monthlyMap[k].label);
+    const weekdayData = monthlyKeys.map(k => monthlyMap[k].weekday);
+    const weekendData = monthlyKeys.map(k => monthlyMap[k].weekend);
+
+    chartDailyInstance = new Chart(document.getElementById('chartDaily'), {
+      type: 'bar',
+      data: {
+        labels: labels.length ? labels : ['Không có'],
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Ngày thường (T2-T6)',
+            data: weekdayData,
+            backgroundColor: 'rgba(45, 212, 191, 0.55)',
+            borderColor: '#2dd4bf',
+            borderWidth: 1,
+            borderRadius: 3,
+            stack: 'month',
+            order: 3
+          },
+          {
+            type: 'bar',
+            label: 'Cuối tuần (T7, CN)',
+            data: weekendData,
+            backgroundColor: 'rgba(251, 191, 36, 0.85)',
+            borderColor: '#fbbf24',
+            borderWidth: 1,
+            borderRadius: 3,
+            stack: 'month',
+            order: 2
+          },
+          {
+            type: 'line',
+            label: `Trung bình tháng (${fmtK(avgMonthly)})`,
+            data: monthlyKeys.map(() => avgMonthly),
+            borderColor: '#fb7185',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [5, 4],
+            pointRadius: 3,
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'top', align: 'end', labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8 } },
+          tooltip: {
+            callbacks: {
+              label: (c) => {
+                if (c.dataset.type === 'line') return `📊 Trung bình tháng: ${fmt(c.raw)}`;
+                return `${c.dataset.label}: ${fmt(c.raw)}`;
+              },
+              afterBody: (items) => {
+                const idx = items[0].dataIndex;
+                const k = monthlyKeys[idx];
+                if (!k) return '';
+                const m = monthlyMap[k];
+                const pct = m.total > 0 ? (m.weekend / m.total * 100).toFixed(1) : 0;
+                return `──────────────────
+Tổng cộng: ${fmt(m.total)} (${m.count} đơn)
+Cuối tuần đóng góp: ${pct}%`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true, ticks: { font: { size: 10 } } },
+          y: { stacked: true, ticks: { callback: v => fmtK(v), font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // 4. Biểu đồ 2: Doanh thu theo tuần (Hiển thị rõ 2 ngày cuối tuần + Đường Trung bình)
+  if (chartWeeklyInstance) chartWeeklyInstance.destroy();
+
+  const weekLabels = weeklyKeys.map((k, i) => `T${i+1}: ${weeklyMap[k].label}`);
+  const weekWeekdayData = weeklyKeys.map(k => weeklyMap[k].weekday);
+  const weekWeekendData = weeklyKeys.map(k => weeklyMap[k].weekend);
+
+  chartWeeklyInstance = new Chart(document.getElementById('chartWeekly'), {
     type: 'bar',
     data: {
-      labels: dailyLabels.length ? dailyLabels : ['Không có'],
-      datasets: [{
-        data: dailyData.length ? dailyData : [0],
-        backgroundColor: 'rgba(45,212,191,.35)',
-        borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 2, maxBarThickness: 14,
-      }]
+      labels: weekLabels.length ? weekLabels : ['Không có'],
+      datasets: [
+        {
+          type: 'bar',
+          label: '💼 Ngày thường (T2 - T6)',
+          data: weekWeekdayData,
+          backgroundColor: 'rgba(45, 212, 191, 0.55)',
+          borderColor: '#2dd4bf',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'week',
+          order: 3
+        },
+        {
+          type: 'bar',
+          label: '🏖️ Cuối tuần (T7 & CN)',
+          data: weekWeekendData,
+          backgroundColor: 'rgba(251, 191, 36, 0.85)',
+          borderColor: '#fbbf24',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'week',
+          order: 2
+        },
+        {
+          type: 'line',
+          label: `Trung bình (${fmtK(avgWeekly)}/tuần)`,
+          data: weeklyKeys.map(() => avgWeekly),
+          borderColor: '#fb7185',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          order: 1
+        }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
+      plugins: {
+        legend: {
+          display: true, position: 'bottom',
+          labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8 }
+        },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const idx = items[0].dataIndex;
+              const k = weeklyKeys[idx];
+              return k ? `Tuần: ${weeklyMap[k].label}` : '';
+            },
+            label: (c) => {
+              if (c.dataset.type === 'line') return `📊 Trung bình: ${fmt(c.raw)} / tuần`;
+              return `${c.dataset.label}: ${fmt(c.raw)}`;
+            },
+            afterBody: (items) => {
+              const idx = items[0].dataIndex;
+              const k = weeklyKeys[idx];
+              if (!k) return '';
+              const w = weeklyMap[k];
+              const pct = w.total > 0 ? (w.weekend / w.total * 100).toFixed(1) : 0;
+              const diffFromAvg = avgWeekly > 0 ? (((w.total - avgWeekly) / avgWeekly) * 100).toFixed(1) : 0;
+              const diffSign = diffFromAvg >= 0 ? `+${diffFromAvg}% (Vượt TB)` : `${diffFromAvg}% (Dưới TB)`;
+              return `───────────────────────
+Tổng tuần: ${fmt(w.total)} (${w.count} đơn)
+Tỷ trọng cuối tuần: ${pct}%
+So với TB tuần: ${diffSign}`;
+            }
+          }
+        }
+      },
       scales: {
-        x: { ticks: { font: { size: 9 }, maxRotation: 60, autoSkip: true, maxTicksLimit: 14 } },
-        y: { ticks: { callback: v => fmtK(v), font: { size: 10 } } }
+        x: { stacked: true, ticks: { font: { size: 9 }, maxRotation: 45 } },
+        y: { stacked: true, ticks: { callback: v => fmtK(v), font: { size: 10 } } }
       }
     }
   });
 
-  // Chart Status
+  // 5. Chart Status
   const s = currentFilteredStats;
   const statusLabels = ['Đã giao', 'Chờ xử lý', 'Đã lấy', 'Đang giao', 'Đã huỷ'];
   const statusData = [s.delivered, s.pending, s.pickedUp, s.inTransit, s.cancelled];
@@ -1162,39 +1568,7 @@ function renderCharts() {
     }
   });
 
-  // Chart Weekly
-  const weeklyMap = {};
-  for (const o of active) {
-    const t = getOrderTs(o);
-    if (!t) continue;
-    const d = new Date(t);
-    const mon = new Date(d);
-    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const k = mon.toISOString().slice(0, 10);
-    weeklyMap[k] = (weeklyMap[k] || 0) + (o.totalPrice || 0);
-  }
-  const weeklyLabels = Object.keys(weeklyMap).sort().slice(-16);
-  const weeklyData = weeklyLabels.map(k => weeklyMap[k]);
-
-  if (chartWeeklyInstance) chartWeeklyInstance.destroy();
-  chartWeeklyInstance = new Chart(document.getElementById('chartWeekly'), {
-    type: 'line',
-    data: {
-      labels: weeklyLabels.length ? weeklyLabels : ['Không có'],
-      datasets: [{
-        data: weeklyData.length ? weeklyData : [0],
-        borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.08)',
-        tension: .35, fill: true, pointRadius: 2.5, pointBackgroundColor: '#38bdf8', borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
-      scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { callback: v => fmtK(v), font: { size: 10 } } } }
-    }
-  });
-
-  // Chart Payment
+  // 6. Chart Payment
   const payCount = {};
   for (const o of active) {
     const m = PAY_VI[o.paymentMethod] || o.paymentMethod || 'Không rõ';
@@ -1216,6 +1590,16 @@ function renderCharts() {
     }
   });
 }
+
+// Event listeners cho nút chuyển đổi Daily / Monthly
+document.querySelectorAll('#time-view-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#time-view-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    timeViewMode = chip.dataset.timeview;
+    renderCharts();
+  });
+});
 
 /* ════════════════ PRODUCT / CUSTOMER BARS ════════════════ */
 let productsSortKey = 'revenue';
