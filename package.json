@@ -1,0 +1,12 @@
+{
+  "name": "ecogo-firestore-backup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EcoGo Firestore Backup & Dashboard Engine",
+  "scripts": {
+    "build-dashboard": "node .github/scripts/build-dashboard.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

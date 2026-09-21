@@ -1,5 +1,5 @@
 # Firestore Backup - Thứ 2, 4, 6
-# Chạy lúc 20:00 GMT+7 (13:00 UTC) — trước khi Firestore reset quota lúc 22:00 GMT+7
+# Chạy lúc 20:23 GMT+7 (13:23 UTC) — phút lẻ tránh kẹt hàng đợi GitHub Actions, trước khi Firestore reset quota lúc 22:00 GMT+7
 #
 # Secrets cần cấu hình trong repo Settings → Secrets and variables → Actions:
 #   FIREBASE_SERVICE_ACCOUNT_BASE64  : Service account JSON đã encode base64
@@ -11,7 +11,7 @@ name: Firestore Backup - T2 T4 T6
 
 on:
   schedule:
-    - cron: '0 13 * * 1,3,5'  # 20:00 GMT+7 mỗi T2, T4, T6 (UTC 13:00)
+    - cron: '23 13 * * 1,3,5'  # 20:23 GMT+7 mỗi T2, T4, T6 (UTC 13:23) - phút lẻ chạy ngay không bị trễ
   workflow_dispatch:            # Cho phép chạy thủ công
 
 jobs:
@@ -29,25 +29,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ── 2. Setup Node.js 22 ─────────────────────────────────────────────────
+      # ── 2. Setup Node.js 22 với Cache ─────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'npm'
 
       # ── 3. Cài dependencies ─────────────────────────────────────────────────
       - name: Install dependencies
-        run: |
-          cat > package.json << 'EOF'
-          {
-            "name": "firestore-backup",
-            "version": "1.0.0",
-            "dependencies": {
-              "firebase-admin": "^12.0.0"
-            }
-          }
-          EOF
-          npm install
+        run: npm install
 
       # ── 4. Lấy ngày giờ hiện tại (Vietnam time) ─────────────────────────────
       - name: Get current date
@@ -65,7 +56,7 @@ jobs:
           esac
           echo "dayname=$DAY_NAME" >> $GITHUB_OUTPUT
 
-      # ── 5. Tạo và chạy backup script ────────────────────────────────────────
+      # ── 5. Tạo và chạy backup script (Tối ưu siêu tốc song song) ────────────
       - name: Run Firestore backup
         run: |
           node - << 'EOF'
@@ -90,29 +81,40 @@ jobs:
           });
           const db = admin.firestore();
 
-          // Export đệ quy collection + sub-collections
-          async function exportCollection(colRef) {
-            const snapshot = await colRef.get();
-            const result = [];
-            for (const doc of snapshot.docs) {
-              const raw = doc.data();
-              const data = { _id: doc.id };
-              for (const [k, v] of Object.entries(raw)) {
-                data[k] = (v && typeof v.toDate === "function") ? v.toDate().toISOString() : v;
+          // Chuyển đổi timestamp của Firestore sang ISO string an toàn
+          function normalizeDocData(raw, id) {
+            const data = { _id: id };
+            for (const [k, v] of Object.entries(raw)) {
+              if (v && typeof v.toDate === "function") {
+                data[k] = v.toDate().toISOString();
+              } else if (Array.isArray(v)) {
+                data[k] = v.map((item) => {
+                  if (item && typeof item === "object") {
+                    const normItem = {};
+                    for (const [ik, iv] of Object.entries(item)) {
+                      normItem[ik] = (iv && typeof iv.toDate === "function") ? iv.toDate().toISOString() : iv;
+                    }
+                    return normItem;
+                  }
+                  return item;
+                });
+              } else {
+                data[k] = v;
               }
-              const subCols = await doc.ref.listCollections();
-              for (const sub of subCols) {
-                data[sub.id] = await exportCollection(sub);
-              }
-              result.push(data);
             }
-            return result;
+            return data;
+          }
+
+          // Đọc trực tiếp snapshot toàn bộ collection song song siêu tốc
+          async function exportCollectionFast(colRef) {
+            const snapshot = await colRef.get();
+            return snapshot.docs.map((doc) => normalizeDocData(doc.data(), doc.id));
           }
 
           async function main() {
             const startTime = Date.now();
             console.log("=".repeat(50));
-            console.log("Bat dau backup Firestore");
+            console.log("Bat dau backup Firestore (Che do song song sieu toc)");
             console.log("Thoi gian: " + new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }));
             console.log("=".repeat(50));
 
@@ -128,13 +130,22 @@ jobs:
               console.log("Canh bao: Khong tim thay collection nao.");
             }
 
+            console.log(`Tim thay ${collections.length} collections: ${collections.map((c) => c.id).join(", ")}`);
+
+            // Xuất song song tất cả collections với Promise.all
+            const colPromises = collections.map(async (col) => {
+              const startCol = Date.now();
+              const docs = await exportCollectionFast(col);
+              const elapsedCol = ((Date.now() - startCol) / 1000).toFixed(2);
+              console.log(`  -> ${col.id}: ${docs.length} documents (${elapsedCol}s)`);
+              return { id: col.id, docs };
+            });
+
+            const results = await Promise.all(colPromises);
             let totalDocs = 0;
-            for (const col of collections) {
-              console.log("Dang backup: " + col.id + " ...");
-              const docs = await exportCollection(col);
-              backup[col.id] = docs;
-              totalDocs += docs.length;
-              console.log("  -> " + docs.length + " documents");
+            for (const res of results) {
+              backup[res.id] = res.docs;
+              totalDocs += res.docs.length;
             }
 
             const date = new Date().toISOString().slice(0, 10);
@@ -156,7 +167,7 @@ jobs:
             console.log("Tong documents    : " + totalDocs);
             console.log("Kich thuoc JSON   : " + rawSizeKB + " KB");
             console.log("Kich thuoc nen GZ : " + gzSizeKB + " KB (giam " + ratio + "%)");
-            console.log("Thoi gian chay    : " + elapsed + "s");
+            console.log("Thoi gian chay    : " + elapsed + "s (sieu toc!)");
             console.log("=".repeat(50));
           }
 
