@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
    TOKENS
@@ -128,6 +129,94 @@ nav.tabs::-webkit-scrollbar { display: none; }
 }
 .tab-btn.active .tab-badge { background: var(--tide-dim); color: var(--tide); }
 .tab-badge.alert { background: rgba(251,113,133,.18); color: var(--coral); }
+
+
+/* ════════════════════════════════════════════════════════════
+   DATE FILTER & EXCEL BAR
+   ════════════════════════════════════════════════════════════ */
+.date-filter-bar {
+  background: var(--depth);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 28px;
+  position: sticky;
+  top: 112px;
+  z-index: 180;
+  backdrop-filter: blur(10px);
+}
+.date-filter-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.date-quick-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 12px;
+  color: var(--mist);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.date-custom-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.date-input {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--foam);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  outline: none;
+}
+.date-input:focus {
+  border-color: var(--tide);
+}
+.date-sep {
+  color: var(--dim);
+  font-size: 12px;
+}
+.btn-excel {
+  background: linear-gradient(145deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  padding: 7px 15px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: transform .12s, box-shadow .12s, background .15s;
+}
+.btn-excel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(145deg, #34d399, #059669);
+}
+.btn-excel:active {
+  transform: translateY(0);
+}
+.active-range-indicator {
+  font-size: 11.5px;
+  color: var(--tide);
+  font-family: var(--font-mono);
+  margin-left: 6px;
+  font-weight: 600;
+}
 
 /* ════════════════════════════════════════════════════════════
    LAYOUT
@@ -382,10 +471,11 @@ select:focus { border-color: var(--tide); }
 .print-btn:hover { background: #5eead4; }
 
 @media print {
-  header, nav.tabs, .filter-bar, .print-btn, .drawer, .drawer-backdrop { display: none !important; }
+  header, nav.tabs, .date-filter-bar, .filter-bar, .print-btn, .btn-excel, .drawer, .drawer-backdrop { display: none !important; }
   body { background: white; color: black; }
   .view { display: block !important; }
-  #view-orders, #view-history, #view-anomalies, #view-overview { display: none !important; }
+  #view-orders, #view-batches, #view-deleted, #view-history, #view-anomalies, #view-overview { display: none !important; }
+  #view-report { display: block !important; }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -438,6 +528,34 @@ select:focus { border-color: var(--tide); }
     <button class="tab-btn" data-view="report">📄 Báo cáo</button>
   </div>
 </nav>
+
+<!-- DATE FILTER & EXCEL EXPORT BAR -->
+<section class="date-filter-bar">
+  <div class="date-filter-inner">
+    <div class="date-quick-chips" id="date-quick-chips">
+      <span class="filter-label">📅 Kỳ báo cáo:</span>
+      <button class="chip active" data-range="all">Toàn bộ</button>
+      <button class="chip" data-range="today">Hôm nay</button>
+      <button class="chip" data-range="yesterday">Hôm qua</button>
+      <button class="chip" data-range="7d">7 ngày qua</button>
+      <button class="chip" data-range="30d">30 ngày qua</button>
+      <button class="chip" data-range="this_month">Tháng này</button>
+      <button class="chip" data-range="last_month">Tháng trước</button>
+      <span class="active-range-indicator" id="active-range-text">Toàn bộ thời gian</span>
+    </div>
+    <div class="date-custom-inputs">
+      <span class="filter-label" style="margin-right:0">Tùy chọn:</span>
+      <input type="date" id="date-from" class="date-input" title="Từ ngày">
+      <span class="date-sep">→</span>
+      <input type="date" id="date-to" class="date-input" title="Đến ngày">
+      <button class="chip" id="btn-apply-custom-date">Lọc</button>
+      <button class="btn-excel" id="btn-export-excel" onclick="exportToExcel()" title="Xuất toàn bộ dữ liệu ra file Excel (.xlsx)">
+        📥 Xuất Excel (.xlsx)
+      </button>
+    </div>
+  </div>
+</section>
+
 
 <main>
 
@@ -674,19 +792,59 @@ select:focus { border-color: var(--tide); }
   <!-- ═══════════════ REPORT ═══════════════ -->
   <section class="view" id="view-report">
     <div class="report-hero">
-      <h2>Báo cáo bán hàng — Nấm Lùn Shop</h2>
-      <p id="report-period">—</p>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2>Báo cáo Bán hàng & Dòng tiền — Nấm Lùn Shop</h2>
+          <p id="report-period">—</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-excel" onclick="exportToExcel()">📥 Xuất Excel kỳ này</button>
+          <button class="print-btn" onclick="window.print()">🖨️ In / Lưu PDF A4</button>
+        </div>
+      </div>
       <div class="report-grid" id="report-stats"></div>
     </div>
-    <p class="eyebrow">Nhận định nổi bật</p>
+
+    <p class="eyebrow">Cân đối Dòng tiền & Doanh thu trong kỳ</p>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Phân rã doanh thu theo trạng thái</span></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Dòng tiền</th><th class="text-right">Số đơn</th><th class="text-right">Tổng tiền</th><th class="text-right">Tỷ trọng</th></tr></thead>
+            <tbody id="report-financial-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Cơ cấu phương thức thanh toán</span></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Phương thức</th><th class="text-right">Số đơn</th><th class="text-right">Tổng tiền</th><th class="text-right">Tỷ trọng</th></tr></thead>
+            <tbody id="report-payment-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <p class="eyebrow">Nhận định vận hành & Rủi ro thanh toán</p>
     <div style="display:flex; flex-direction:column; gap:10px;" id="report-insights"></div>
-    <p class="eyebrow">Top sản phẩm theo doanh thu</p>
-    <div class="panel"><div class="table-scroll"><table>
-      <thead><tr><th>#</th><th>Sản phẩm</th><th class="text-right">SL bán</th><th class="text-right">Doanh thu</th></tr></thead>
-      <tbody id="report-products-tbody"></tbody>
-    </table></div></div>
-    <div style="margin-top:24px; display:flex; justify-content:flex-end;">
-      <button class="print-btn" onclick="window.print()">🖨️ In / Lưu PDF báo cáo</button>
+
+    <div class="grid-2b" style="margin-top:16px;">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Top 10 sản phẩm bán chạy nhất trong kỳ</span></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>#</th><th>Sản phẩm</th><th class="text-right">SL bán</th><th class="text-right">Doanh thu</th></tr></thead>
+          <tbody id="report-products-tbody"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Top 10 khách hàng thân thiết nhất trong kỳ</span></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>#</th><th>Khách hàng</th><th class="text-right">Số đơn</th><th class="text-right">Tổng chi tiêu</th></tr></thead>
+          <tbody id="report-customers-tbody"></tbody>
+        </table></div>
+      </div>
     </div>
   </section>
 
@@ -713,6 +871,7 @@ const fmtDateTime = ts => { if(!ts) return '—'; const d = new Date(ts > 1e12 ?
 const STATUS_VI = {PENDING:'Chờ xử lý',IN_TRANSIT:'Đang giao',PICKED_UP:'Đã lấy hàng',DELIVERED:'Đã giao',CANCELLED:'Đã huỷ',UNKNOWN:'Không rõ'};
 const PAY_VI = {CASH:'Tiền mặt',TRANSFER:'Chuyển khoản'};
 const esc = s => String(s==null?'—':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const getOrderTs = o => o.createdAt > 1e12 ? o.createdAt : o.createdAt * 1000;
 
 /* ════════════════ HEADER META ════════════════ */
 document.getElementById('meta-updated').textContent = 'Cập nhật ' + fmtDateTime(new Date(D.meta.generatedAt).getTime());
@@ -731,25 +890,213 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+function switchView(view) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelector(`.tab-btn[data-view="${view}"]`).classList.add('active');
+  document.getElementById('view-' + view).classList.add('active');
+}
+
+/* ════════════════ DATE RANGE STATE & FILTERING ENGINE ════════════════ */
+const allLiveOrders = D.orders.filter(o => !o.deleted);
+const deletedOrdersForUI = D.orders.filter(o => o.deleted);
+document.getElementById('badge-deleted').textContent = deletedOrdersForUI.length;
+
+let selectedRangeKey = 'all';
+let currentStartTs = null;
+let currentEndTs = null;
+let currentRangeLabel = 'Toàn bộ thời gian';
+
+let currentFilteredOrders = allLiveOrders;
+let currentFilteredProducts = [];
+let currentFilteredCustomers = [];
+let currentFilteredBatches = [];
+let currentFilteredStats = {};
+
+function calculateDateBounds(key, customFrom, customTo) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayEnd = todayStart + 86400000 - 1;
+
+  if (key === 'today') {
+    return { start: todayStart, end: todayEnd, label: `Hôm nay (${now.toLocaleDateString('vi-VN')})` };
+  }
+  if (key === 'yesterday') {
+    const yStart = todayStart - 86400000;
+    return { start: yStart, end: todayStart - 1, label: 'Hôm qua' };
+  }
+  if (key === '7d') {
+    return { start: todayEnd - 7 * 86400000 + 1, end: todayEnd, label: '7 ngày qua' };
+  }
+  if (key === '30d') {
+    return { start: todayEnd - 30 * 86400000 + 1, end: todayEnd, label: '30 ngày qua' };
+  }
+  if (key === 'this_month') {
+    const mStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    return { start: mStart, end: todayEnd, label: `Tháng ${now.getMonth()+1}/${now.getFullYear()}` };
+  }
+  if (key === 'last_month') {
+    const lmStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    const lmEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).getTime();
+    const prevMonth = new Date(lmStart);
+    return { start: lmStart, end: lmEnd, label: `Tháng ${prevMonth.getMonth()+1}/${prevMonth.getFullYear()}` };
+  }
+  if (key === 'custom') {
+    const s = customFrom ? new Date(customFrom + 'T00:00:00').getTime() : null;
+    const e = customTo ? new Date(customTo + 'T23:59:59.999').getTime() : null;
+    return { start: s, end: e, label: `${customFrom||'—'} → ${customTo||'—'}` };
+  }
+  return { start: null, end: null, label: 'Toàn bộ thời gian' };
+}
+
+function applyDateFilter(key, customFrom, customTo) {
+  selectedRangeKey = key;
+  const bounds = calculateDateBounds(key, customFrom, customTo);
+  currentStartTs = bounds.start;
+  currentEndTs = bounds.end;
+  currentRangeLabel = bounds.label;
+
+  document.getElementById('active-range-text').textContent = currentRangeLabel;
+
+  // Filter orders
+  if (currentStartTs == null && currentEndTs == null) {
+    currentFilteredOrders = allLiveOrders;
+  } else {
+    currentFilteredOrders = allLiveOrders.filter(o => {
+      const t = getOrderTs(o);
+      if (currentStartTs && t < currentStartTs) return false;
+      if (currentEndTs && t > currentEndTs) return false;
+      return true;
+    });
+  }
+
+  // Calculate stats
+  const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+  const delivered = currentFilteredOrders.filter(o => o.status === 'DELIVERED');
+  const pending = currentFilteredOrders.filter(o => o.status === 'PENDING');
+  const inTransit = currentFilteredOrders.filter(o => o.status === 'IN_TRANSIT');
+  const pickedUp = currentFilteredOrders.filter(o => o.status === 'PICKED_UP');
+  const cancelled = currentFilteredOrders.filter(o => o.status === 'CANCELLED');
+
+  const totalRev = active.reduce((s, o) => s + (o.totalPrice || 0), 0);
+  const delRev = delivered.reduce((s, o) => s + (o.totalPrice || 0), 0);
+  const pipeRev = [...pending, ...inTransit, ...pickedUp].reduce((s, o) => s + (o.totalPrice || 0), 0);
+  const cancRev = cancelled.reduce((s, o) => s + (o.totalPrice || 0), 0);
+
+  const transferOrders = active.filter(o => o.paymentMethod === 'TRANSFER');
+  const transferVerified = transferOrders.filter(o => o.paymentVerified === true);
+  const transferUnverified = transferOrders.filter(o => o.paymentVerified !== true);
+  const transferUnverifiedRev = transferUnverified.reduce((s, o) => s + (o.totalPrice || 0), 0);
+
+  const uniqueCustomers = new Set(active.map(o => o.customerName || o.customerPhone)).size;
+
+  currentFilteredStats = {
+    totalOrders: currentFilteredOrders.length,
+    activeOrdersCount: active.length,
+    totalRevenue: totalRev,
+    deliveredRevenue: delRev,
+    pipelineRevenue: pipeRev,
+    cancelledRevenue: cancRev,
+    avgOrderValue: active.length ? totalRev / active.length : 0,
+    delivered: delivered.length,
+    pending: pending.length,
+    inTransit: inTransit.length,
+    pickedUp: pickedUp.length,
+    cancelled: cancelled.length,
+    transferVerified: transferVerified.length,
+    transferUnverified: transferUnverified.length,
+    transferUnverifiedRevenue: transferUnverifiedRev,
+    uniqueCustomers
+  };
+
+  // Re-aggregate products
+  const pMap = {};
+  for (const o of active) {
+    for (const it of o.items || []) {
+      const name = (it.name || 'Khác').trim();
+      if (!pMap[name]) pMap[name] = { name, qty: 0, revenue: 0, orders: 0 };
+      pMap[name].qty += it.qty || 0;
+      pMap[name].revenue += (it.price || 0) * (it.qty || 0);
+      pMap[name].orders += 1;
+    }
+  }
+  currentFilteredProducts = Object.values(pMap).sort((a, b) => b.revenue - a.revenue);
+
+  // Re-aggregate customers
+  const cMap = {};
+  for (const o of active) {
+    const name = o.customerName || 'Không rõ';
+    if (!cMap[name]) cMap[name] = { name, count: 0, revenue: 0, phone: o.customerPhone || '' };
+    cMap[name].count += 1;
+    cMap[name].revenue += o.totalPrice || 0;
+  }
+  currentFilteredCustomers = Object.values(cMap).sort((a, b) => b.revenue - a.revenue);
+
+  // Re-aggregate batches
+  const bMap = {};
+  for (const o of currentFilteredOrders) {
+    const b = o.batchId || 'Không có lô';
+    if (!bMap[b]) {
+      bMap[b] = { name: b, count: 0, revenue: 0, cancelled: 0, deletedCount: 0, products: {}, firstDate: null, lastDate: null, totalQty: 0 };
+    }
+    const entry = bMap[b];
+    entry.count += 1;
+    if (o.status === 'CANCELLED') {
+      entry.cancelled += 1;
+    } else {
+      entry.revenue += o.totalPrice || 0;
+      for (const it of o.items || []) {
+        const name = (it.name || 'Khác').trim();
+        if (!entry.products[name]) entry.products[name] = { name, qty: 0, revenue: 0 };
+        entry.products[name].qty += it.qty || 0;
+        entry.products[name].revenue += (it.price || 0) * (it.qty || 0);
+        entry.totalQty += it.qty || 0;
+      }
+    }
+    const t = getOrderTs(o);
+    if (t) {
+      if (entry.firstDate === null || t < entry.firstDate) entry.firstDate = t;
+      if (entry.lastDate === null || t > entry.lastDate) entry.lastDate = t;
+    }
+  }
+  currentFilteredBatches = Object.values(bMap).map(b => ({
+    ...b,
+    products: Object.values(b.products).sort((x, y) => y.qty - x.qty)
+  })).sort((a, b) => b.revenue - a.revenue);
+
+  // Update UI components
+  renderKpis();
+  renderCharts();
+  renderProductsBars();
+  renderCustomersBars();
+  renderBatchesOverview();
+  renderBatchesFull();
+  renderOrders();
+  renderReportView();
+}
+
 /* ════════════════ KPI CARDS ════════════════ */
-const kpis = [
-  { label:'Tổng đơn hàng', value: D.stats.totalOrders.toLocaleString('vi-VN'), sub: D.stats.totalCustomers + ' khách hàng', icon:'📦' },
-  { label:'Doanh thu', value: fmtK(D.stats.totalRevenue), sub: fmt(D.stats.totalRevenue), icon:'💰' },
-  { label:'Giá trị TB / đơn', value: fmtK(D.stats.avgOrderValue), sub: 'trung bình', icon:'📈' },
-  { label:'Đã giao', value: D.stats.delivered.toLocaleString('vi-VN'), sub: fmtK(D.stats.deliveredRevenue), icon:'✅' },
-  { label:'Chờ xử lý', value: D.stats.pending.toLocaleString('vi-VN'), sub:'đơn PENDING', icon:'⏳' },
-  { label:'Đã xoá mềm', value: D.stats.deletedCount.toLocaleString('vi-VN'), sub:'không tính vào số liệu', icon:'🗑️', view:'deleted', warn: D.stats.deletedCount > 0 },
-  { label:'CK chưa xác nhận', value: D.stats.transferUnverified.toLocaleString('vi-VN'), sub: fmt(D.stats.transferUnverifiedRevenue), icon:'🏦', view:'anomalies', warn: D.stats.transferUnverified > 0 },
-];
-document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-  <div class="kpi-card" ${k.view?`data-jump="${k.view}" style="cursor:pointer"`:''}><span class="kpi-icon">${k.icon}</span>
-    <p class="kpi-label">${k.label}</p>
-    <p class="kpi-value" ${k.warn?'style="color:var(--rust)"':''}>${k.value}</p>
-    <p class="kpi-sub">${k.sub}</p>
-  </div>`).join('');
-document.querySelectorAll('#kpi-grid [data-jump]').forEach(card => {
-  card.addEventListener('click', () => switchView(card.dataset.jump));
-});
+function renderKpis() {
+  const s = currentFilteredStats;
+  const kpis = [
+    { label: 'Tổng đơn hàng', value: s.totalOrders.toLocaleString('vi-VN'), sub: s.uniqueCustomers + ' khách hàng', icon: '📦' },
+    { label: 'Doanh thu thực nhận', value: fmtK(s.deliveredRevenue), sub: 'Đã giao thành công', icon: '💰', style: 'color:var(--kelp)' },
+    { label: 'Doanh thu đặt hàng', value: fmtK(s.totalRevenue), sub: fmt(s.totalRevenue), icon: '📈' },
+    { label: 'Giá trị TB / đơn', value: fmtK(s.avgOrderValue), sub: 'trung bình', icon: '🏷️' },
+    { label: 'Đang giao & Chờ', value: (s.pending + s.inTransit + s.pickedUp).toLocaleString('vi-VN'), sub: fmtK(s.pipelineRevenue), icon: '⏳', warn: (s.pending > 0) },
+    { label: 'CK chưa xác nhận', value: s.transferUnverified.toLocaleString('vi-VN'), sub: fmt(s.transferUnverifiedRevenue), icon: '🏦', view: 'anomalies', warn: (s.transferUnverified > 0) },
+    { label: 'Đã huỷ & Xoá', value: (s.cancelled + D.stats.deletedCount).toLocaleString('vi-VN'), sub: 'thất thoát ' + fmtK(s.cancelledRevenue), icon: '🗑️', view: 'deleted', warn: (s.cancelled > 0) },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card" ${k.view ? `data-jump="${k.view}" style="cursor:pointer"` : ''}><span class="kpi-icon">${k.icon}</span>
+      <p class="kpi-label">${k.label}</p>
+      <p class="kpi-value" ${k.warn ? 'style="color:var(--rust)"' : (k.style ? `style="${k.style}"` : '')}>${k.value}</p>
+      <p class="kpi-sub">${k.sub}</p>
+    </div>`).join('');
+  document.querySelectorAll('#kpi-grid [data-jump]').forEach(card => {
+    card.addEventListener('click', () => switchView(card.dataset.jump));
+  });
+}
 
 /* ════════════════ CHARTS ════════════════ */
 Chart.defaults.color = '#8fa3ad';
@@ -757,56 +1104,133 @@ Chart.defaults.borderColor = '#1e2d3d';
 Chart.defaults.font.family = "'Lexend', sans-serif";
 const PALETTE = ['#2dd4bf','#38bdf8','#fbbf24','#fb7185','#a78bfa','#34d399','#fb923c'];
 
-new Chart(document.getElementById('chartDaily'), {
-  type: 'bar',
-  data: { labels: D.charts.daily.labels, datasets: [{
-    data: D.charts.daily.revenue, backgroundColor: 'rgba(45,212,191,.35)',
-    borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 2, maxBarThickness: 14,
-  }]},
-  options: { responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => fmt(c.raw) } } },
-    scales:{ x:{ ticks:{font:{size:9}, maxRotation:60, autoSkip:true, maxTicksLimit:14} },
-             y:{ ticks:{ callback:v=>fmtK(v), font:{size:10} } } } }
-});
+let chartDailyInstance = null;
+let chartStatusInstance = null;
+let chartWeeklyInstance = null;
+let chartPaymentInstance = null;
 
-new Chart(document.getElementById('chartStatus'), {
-  type:'doughnut',
-  data:{ labels:D.charts.status.labels, datasets:[{ data:D.charts.status.data, backgroundColor:['#fbbf24','#38bdf8','#2dd4bf','#34d399','#fb7185'], borderWidth:0 }]},
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
-    plugins:{ legend:{ position:'bottom', labels:{font:{size:11}, boxWidth:10, padding:10} } } }
-});
+function renderCharts() {
+  // Aggregate daily revenue in current range
+  const dailyMap = {};
+  const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+  for (const o of active) {
+    const t = getOrderTs(o);
+    if (!t) continue;
+    const d = new Date(t).toISOString().slice(0, 10);
+    dailyMap[d] = (dailyMap[d] || 0) + (o.totalPrice || 0);
+  }
+  const dailyLabels = Object.keys(dailyMap).sort().slice(-90);
+  const dailyData = dailyLabels.map(k => dailyMap[k]);
 
-new Chart(document.getElementById('chartWeekly'), {
-  type:'line',
-  data:{ labels:D.charts.weekly.labels, datasets:[{
-    data:D.charts.weekly.data, borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,.08)',
-    tension:.35, fill:true, pointRadius:2.5, pointBackgroundColor:'#38bdf8', borderWidth:2
-  }]},
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>fmt(c.raw) } } },
-    scales:{ x:{ ticks:{font:{size:9}} }, y:{ ticks:{ callback:v=>fmtK(v), font:{size:10} } } } }
-});
+  // Chart Daily
+  if (chartDailyInstance) chartDailyInstance.destroy();
+  chartDailyInstance = new Chart(document.getElementById('chartDaily'), {
+    type: 'bar',
+    data: {
+      labels: dailyLabels.length ? dailyLabels : ['Không có'],
+      datasets: [{
+        data: dailyData.length ? dailyData : [0],
+        backgroundColor: 'rgba(45,212,191,.35)',
+        borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 2, maxBarThickness: 14,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 60, autoSkip: true, maxTicksLimit: 14 } },
+        y: { ticks: { callback: v => fmtK(v), font: { size: 10 } } }
+      }
+    }
+  });
 
-new Chart(document.getElementById('chartPayment'), {
-  type:'pie',
-  data:{ labels:D.charts.payment.labels, datasets:[{ data:D.charts.payment.data, backgroundColor:PALETTE, borderWidth:0 }]},
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'bottom', labels:{font:{size:11}, boxWidth:10, padding:10} } } }
-});
+  // Chart Status
+  const s = currentFilteredStats;
+  const statusLabels = ['Đã giao', 'Chờ xử lý', 'Đã lấy', 'Đang giao', 'Đã huỷ'];
+  const statusData = [s.delivered, s.pending, s.pickedUp, s.inTransit, s.cancelled];
+
+  if (chartStatusInstance) chartStatusInstance.destroy();
+  chartStatusInstance = new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{ data: statusData, backgroundColor: ['#34d399','#fbbf24','#2dd4bf','#38bdf8','#fb7185'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 10 } } }
+    }
+  });
+
+  // Chart Weekly
+  const weeklyMap = {};
+  for (const o of active) {
+    const t = getOrderTs(o);
+    if (!t) continue;
+    const d = new Date(t);
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const k = mon.toISOString().slice(0, 10);
+    weeklyMap[k] = (weeklyMap[k] || 0) + (o.totalPrice || 0);
+  }
+  const weeklyLabels = Object.keys(weeklyMap).sort().slice(-16);
+  const weeklyData = weeklyLabels.map(k => weeklyMap[k]);
+
+  if (chartWeeklyInstance) chartWeeklyInstance.destroy();
+  chartWeeklyInstance = new Chart(document.getElementById('chartWeekly'), {
+    type: 'line',
+    data: {
+      labels: weeklyLabels.length ? weeklyLabels : ['Không có'],
+      datasets: [{
+        data: weeklyData.length ? weeklyData : [0],
+        borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.08)',
+        tension: .35, fill: true, pointRadius: 2.5, pointBackgroundColor: '#38bdf8', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
+      scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { callback: v => fmtK(v), font: { size: 10 } } } }
+    }
+  });
+
+  // Chart Payment
+  const payCount = {};
+  for (const o of active) {
+    const m = PAY_VI[o.paymentMethod] || o.paymentMethod || 'Không rõ';
+    payCount[m] = (payCount[m] || 0) + 1;
+  }
+  const payLabels = Object.keys(payCount);
+  const payData = payLabels.map(k => payCount[k]);
+
+  if (chartPaymentInstance) chartPaymentInstance.destroy();
+  chartPaymentInstance = new Chart(document.getElementById('chartPayment'), {
+    type: 'pie',
+    data: {
+      labels: payLabels.length ? payLabels : ['Không có'],
+      datasets: [{ data: payData.length ? payData : [0], backgroundColor: PALETTE, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 10 } } }
+    }
+  });
+}
 
 /* ════════════════ PRODUCT / CUSTOMER BARS ════════════════ */
 let productsSortKey = 'revenue';
 function renderProductsBars() {
-  let rows = D.topProducts.slice();
+  let rows = currentFilteredProducts.slice();
   if (productsSortKey === 'name') rows.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
   else rows.sort((a,b) => (b[productsSortKey]||0) - (a[productsSortKey]||0));
+  rows = rows.slice(0, 12);
   const maxVal = Math.max(...rows.map(r => productsSortKey === 'name' ? r.revenue : r[productsSortKey]), 1);
   document.getElementById('products-bars').innerHTML = rows.map((p,i) => `
     <div class="bar-row">
       <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(p.name)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${((productsSortKey==='name'?p.revenue:p[productsSortKey])/maxVal*100).toFixed(1)}%"></div></div>
       <span class="bar-val">${productsSortKey === 'qty' ? p.qty.toLocaleString('vi-VN') : fmtK(p.revenue)}</span>
-    </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+    </div>`).join('') || '<p class="text-dim" style="padding:12px 0">Chưa có dữ liệu trong kỳ này</p>';
 }
 document.querySelectorAll('#products-sort-chips .chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -816,20 +1240,20 @@ document.querySelectorAll('#products-sort-chips .chip').forEach(chip => {
     renderProductsBars();
   });
 });
-renderProductsBars();
 
 let customersSortKey = 'revenue';
 function renderCustomersBars() {
-  let rows = D.topCustomers.slice();
+  let rows = currentFilteredCustomers.slice();
   if (customersSortKey === 'name') rows.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
   else rows.sort((a,b) => (b[customersSortKey]||0) - (a[customersSortKey]||0));
+  rows = rows.slice(0, 12);
   const maxVal = Math.max(...rows.map(r => customersSortKey === 'name' ? r.revenue : r[customersSortKey]), 1);
   document.getElementById('customers-bars').innerHTML = rows.map((c,i) => `
     <div class="bar-row">
       <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(c.name)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${((customersSortKey==='name'?c.revenue:c[customersSortKey])/maxVal*100).toFixed(1)}%; background:linear-gradient(90deg,#38bdf8,#0284c7)"></div></div>
       <span class="bar-val">${customersSortKey === 'count' ? c.count + ' đơn' : fmtK(c.revenue)}</span>
-    </div>`).join('') || '<p class="text-dim">Chưa có dữ liệu</p>';
+    </div>`).join('') || '<p class="text-dim" style="padding:12px 0">Chưa có dữ liệu trong kỳ này</p>';
 }
 document.querySelectorAll('#customers-sort-chips .chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -839,46 +1263,35 @@ document.querySelectorAll('#customers-sort-chips .chip').forEach(chip => {
     renderCustomersBars();
   });
 });
-renderCustomersBars();
 
 /* ════════════════ BATCHES (overview top 15) ════════════════ */
-document.getElementById('batches-tbody').innerHTML = D.topBatches.map(b => `
-  <tr data-batch="${esc(b.name)}">
-    <td class="ellipsis" style="max-width:340px" title="${esc(b.name)}">${esc(b.name)}</td>
-    <td class="text-right text-mist text-mono">${b.count}</td>
-    <td class="text-right text-mono ${b.cancelled?'money neg':'text-dim'}">${b.cancelled||'—'}</td>
-    <td class="text-right text-mono ${b.deletedCount?'money neg':'text-dim'}">${b.deletedCount||'—'}</td>
-    <td class="text-right text-mono text-mist">${b.totalQty?b.totalQty.toLocaleString('vi-VN'):'—'}</td>
-    <td class="text-right money">${fmtK(b.revenue)}</td>
-  </tr>`).join('');
-document.querySelectorAll('#batches-tbody tr').forEach(tr => tr.addEventListener('click', () => openBatchDrawer(tr.dataset.batch)));
-
-document.getElementById('badge-batches').textContent = D.batches.length;
+function renderBatchesOverview() {
+  const top15 = currentFilteredBatches.slice(0, 15);
+  document.getElementById('batches-tbody').innerHTML = top15.map(b => `
+    <tr data-batch="${esc(b.name)}">
+      <td class="ellipsis" style="max-width:340px" title="${esc(b.name)}">${esc(b.name)}</td>
+      <td class="text-right text-mist text-mono">${b.count}</td>
+      <td class="text-right text-mono ${b.cancelled?'money neg':'text-dim'}">${b.cancelled||'—'}</td>
+      <td class="text-right text-mono ${b.deletedCount?'money neg':'text-dim'}">${b.deletedCount||'—'}</td>
+      <td class="text-right text-mono text-mist">${b.totalQty?b.totalQty.toLocaleString('vi-VN'):'—'}</td>
+      <td class="text-right money">${fmtK(b.revenue)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="text-dim" style="text-align:center; padding:18px">Không có lô hàng trong kỳ này</td></tr>';
+  document.querySelectorAll('#batches-tbody tr[data-batch]').forEach(tr => tr.addEventListener('click', () => openBatchDrawer(tr.dataset.batch)));
+  document.getElementById('badge-batches').textContent = currentFilteredBatches.length;
+}
 document.getElementById('view-all-batches-btn').addEventListener('click', () => switchView('batches'));
 
-function switchView(view) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelector(`.tab-btn[data-view="${view}"]`).classList.add('active');
-  document.getElementById('view-' + view).classList.add('active');
-}
-
 /* ════════════════ BATCHES (full tab) ════════════════ */
-const batchesByName = new Map(D.batches.map(b => [b.name, b]));
 let batchFilterState = { q:'', sortKey:'revenue', sortDir:'desc' };
 
 function renderBatchesFull() {
   const ql = batchFilterState.q.toLowerCase().trim();
-  let rows = D.batches.filter(b => !ql || b.name.toLowerCase().includes(ql));
+  let rows = currentFilteredBatches.filter(b => !ql || b.name.toLowerCase().includes(ql));
   const { sortKey, sortDir } = batchFilterState;
   const mul = sortDir === 'asc' ? 1 : -1;
   rows = rows.slice().sort((a, b) => {
-    if (sortKey === 'name') {
-      return a.name.localeCompare(b.name, 'vi') * mul;
-    }
-    if (sortKey === 'lastDate') {
-      return ((a.lastDate||0) - (b.lastDate||0)) * mul;
-    }
+    if (sortKey === 'name') return a.name.localeCompare(b.name, 'vi') * mul;
+    if (sortKey === 'lastDate') return ((a.lastDate||0) - (b.lastDate||0)) * mul;
     return ((a[sortKey]||0) - (b[sortKey]||0)) * mul;
   });
   document.getElementById('batches-full-tbody').innerHTML = rows.map(b => `
@@ -892,8 +1305,8 @@ function renderBatchesFull() {
       <td class="text-dim text-mono" style="font-size:11.5px">${b.firstDate?fmtDate(b.firstDate)+' → '+fmtDate(b.lastDate):'—'}</td>
     </tr>`).join('');
   document.getElementById('batches-empty').classList.toggle('hidden', rows.length > 0);
-  document.getElementById('batches-count').textContent = `${rows.length.toLocaleString('vi-VN')} / ${D.batches.length.toLocaleString('vi-VN')} lô hàng`;
-  document.querySelectorAll('#batches-full-tbody tr').forEach(tr => tr.addEventListener('click', () => openBatchDrawer(tr.dataset.batch)));
+  document.getElementById('batches-count').textContent = `${rows.length.toLocaleString('vi-VN')} / ${currentFilteredBatches.length.toLocaleString('vi-VN')} lô hàng`;
+  document.querySelectorAll('#batches-full-tbody tr[data-batch]').forEach(tr => tr.addEventListener('click', () => openBatchDrawer(tr.dataset.batch)));
 
   document.querySelectorAll('#view-batches thead th.sortable').forEach(th => {
     th.classList.toggle('sort-active', th.dataset.sort === sortKey);
@@ -914,15 +1327,14 @@ document.querySelectorAll('#view-batches thead th.sortable').forEach(th => {
     renderBatchesFull();
   });
 });
-renderBatchesFull();
 
 /* ════════════════ BATCH DETAIL DRAWER ════════════════ */
 function openBatchDrawer(batchName) {
-  const b = batchesByName.get(batchName);
+  const b = currentFilteredBatches.find(x => x.name === batchName) || D.batches.find(x => x.name === batchName);
   if (!b) return;
   document.getElementById('drawer-title').textContent = batchName;
   const maxQty = b.products[0]?.qty || 1;
-  const productsHtml = b.products.length ? b.products.map((p,i) => `
+  const productsHtml = (b.products||[]).length ? b.products.map((p,i) => `
     <div class="bar-row">
       <span class="bar-name"><span class="rank">${String(i+1).padStart(2,'0')}</span>${esc(p.name)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${(p.qty/maxQty*100).toFixed(1)}%"></div></div>
@@ -934,12 +1346,12 @@ function openBatchDrawer(batchName) {
       <h4>Thông tin lô</h4>
       <div class="drawer-row"><span>Tổng số đơn</span><span class="text-mono">${b.count}</span></div>
       <div class="drawer-row"><span>Đơn đã huỷ</span><span class="text-mono ${b.cancelled?'money neg':''}">${b.cancelled||0}</span></div>
-      <div class="drawer-row"><span>Tổng SL hàng hoá</span><span class="text-mono">${b.totalQty.toLocaleString('vi-VN')}</span></div>
+      <div class="drawer-row"><span>Tổng SL hàng hoá</span><span class="text-mono">${(b.totalQty||0).toLocaleString('vi-VN')}</span></div>
       <div class="drawer-row"><span>Khoảng thời gian</span><span class="text-mono" style="font-size:11.5px">${b.firstDate?fmtDate(b.firstDate)+' → '+fmtDate(b.lastDate):'—'}</span></div>
       <div class="drawer-row" style="border-bottom:none"><span>Doanh thu</span><span class="money">${fmt(b.revenue)}</span></div>
     </div>
     <div class="drawer-section">
-      <h4>Số lượng theo sản phẩm (${b.products.length})</h4>
+      <h4>Số lượng theo sản phẩm (${(b.products||[]).length})</h4>
       ${productsHtml}
     </div>
     <div class="drawer-section" style="margin-bottom:0">
@@ -959,9 +1371,91 @@ function filterOrdersByBatch(batchName) {
   renderOrders();
 }
 
+/* ════════════════ ORDERS TABLE ════════════════ */
+const ordersById = new Map(D.orders.map(o => [o.id, o]));
+let orderFilterState = { q:'', status:'', batch:'', payment:'', sortKey:'createdAt', sortDir:'desc' };
+
+function updateBatchDropdown() {
+  const batchSelect = document.getElementById('order-batch-filter');
+  batchSelect.innerHTML = '<option value="">Tất cả lô hàng</option>' +
+    currentFilteredBatches.map(b => `<option value="${esc(b.name)}">${esc(b.name)} (${b.count})</option>`).join('');
+}
+
+function paymentBadge(o) {
+  if (o.paymentMethod !== 'TRANSFER') return `<span class="text-mist">${PAY_VI[o.paymentMethod]||o.paymentMethod}</span>`;
+  if (!o.paymentVerifiedKnown) return `<span class="text-mist">Chuyển khoản</span>`;
+  return o.paymentVerified
+    ? `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ CK đã duyệt</span>`
+    : `<span class="badge" style="background:rgba(251,146,60,.12); color:var(--rust)">⏳ CK chưa duyệt</span>`;
+}
+
+function renderOrders() {
+  const { q, status, batch, payment, sortKey, sortDir } = orderFilterState;
+  const ql = q.toLowerCase().trim();
+  let rows = currentFilteredOrders.filter(o => {
+    if (status && o.status !== status) return false;
+    if (batch && o.batchId !== batch) return false;
+    if (payment === 'TRANSFER_VERIFIED' && !(o.paymentMethod === 'TRANSFER' && o.paymentVerified)) return false;
+    if (payment === 'TRANSFER_UNVERIFIED' && !(o.paymentMethod === 'TRANSFER' && !o.paymentVerified)) return false;
+    if (payment === 'CASH' && o.paymentMethod !== 'CASH') return false;
+    if (!ql) return true;
+    const hay = [o.id, o.customerName, o.address, o.batchId, o.customerPhone, ...(o.items||[]).map(i=>i.name)].join(' ').toLowerCase();
+    return hay.includes(ql);
+  });
+
+  const mul = sortDir === 'asc' ? 1 : -1;
+  rows = rows.slice().sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === 'customerName' || sortKey === 'batchId' || sortKey === 'id' || sortKey === 'status') {
+      av = (av || '').toString().toLowerCase();
+      bv = (bv || '').toString().toLowerCase();
+      return av < bv ? -1 * mul : av > bv ? 1 * mul : 0;
+    }
+    av = av || 0; bv = bv || 0;
+    return (av - bv) * mul;
+  });
+
+  const display = rows.slice(0, 300);
+  document.getElementById('orders-tbody').innerHTML = display.map(o => `
+    <tr data-id="${esc(o.id)}">
+      <td class="text-mono" style="color:var(--current); font-size:12px">${esc(o.id)}${o.hasHistory?' <span title="Có lịch sử thay đổi" style="color:var(--sand)">●</span>':''}</td>
+      <td>${esc(o.customerName)}</td>
+      <td class="ellipsis text-mist" title="${esc(o.address)}">${esc(o.address)}</td>
+      <td class="ellipsis text-dim" style="max-width:140px; font-size:11.5px" title="${esc(o.batchId)}">${esc(o.batchId)}</td>
+      <td class="text-right money">${fmt(o.totalPrice)}</td>
+      <td><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></td>
+      <td>${paymentBadge(o)}</td>
+      <td class="text-dim text-mono" style="font-size:11.5px">${fmtDate(o.createdAt)}</td>
+    </tr>`).join('');
+  document.getElementById('orders-empty').classList.toggle('hidden', rows.length > 0);
+  document.getElementById('orders-count').textContent =
+    `Hiển thị ${display.length.toLocaleString('vi-VN')} / ${rows.length.toLocaleString('vi-VN')} đơn (trong kỳ: ${currentFilteredOrders.length.toLocaleString('vi-VN')})`;
+  document.querySelectorAll('#orders-tbody tr[data-id]').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
+
+  document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
+    th.classList.toggle('sort-active', th.dataset.sort === sortKey);
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.sort === sortKey) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+}
+document.getElementById('order-search').addEventListener('input', e => { orderFilterState.q = e.target.value; renderOrders(); });
+document.getElementById('order-status-filter').addEventListener('change', e => { orderFilterState.status = e.target.value; renderOrders(); });
+document.getElementById('order-batch-filter').addEventListener('change', e => { orderFilterState.batch = e.target.value; renderOrders(); });
+document.getElementById('order-payment-filter').addEventListener('change', e => { orderFilterState.payment = e.target.value; renderOrders(); });
+document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (orderFilterState.sortKey === key) {
+      orderFilterState.sortDir = orderFilterState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      orderFilterState.sortKey = key;
+      orderFilterState.sortDir = (key === 'customerName' || key === 'id' || key === 'batchId' || key === 'status') ? 'asc' : 'desc';
+    }
+    renderOrders();
+  });
+});
+
 /* ════════════════ SOFT-DELETED ORDERS TAB ════════════════ */
-const deletedOrdersForUI = D.orders.filter(o => o.deleted);
-document.getElementById('badge-deleted').textContent = deletedOrdersForUI.length;
 let deletedFilterState = { q:'', sort:'updated_desc' };
 
 function renderDeleted() {
@@ -989,101 +1483,11 @@ function renderDeleted() {
     </tr>`).join('');
   document.getElementById('deleted-empty').classList.toggle('hidden', rows.length > 0);
   document.getElementById('deleted-count').textContent = `${rows.length.toLocaleString('vi-VN')} đơn đã xoá mềm`;
-  document.querySelectorAll('#deleted-tbody tr').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
+  document.querySelectorAll('#deleted-tbody tr[data-id]').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
 }
 document.getElementById('deleted-search').addEventListener('input', e => { deletedFilterState.q = e.target.value; renderDeleted(); });
 document.getElementById('deleted-sort').addEventListener('change', e => { deletedFilterState.sort = e.target.value; renderDeleted(); });
 renderDeleted();
-
-/* ════════════════ ORDERS TABLE ════════════════ */
-const ordersById = new Map(D.orders.map(o => [o.id, o]));
-// Tab "Đơn hàng" chỉ hiển thị đơn ĐANG HOẠT ĐỘNG (không xoá mềm) — đơn xoá mềm xem ở tab riêng
-const liveOrdersForUI = D.orders.filter(o => !o.deleted);
-let orderFilterState = { q:'', status:'', batch:'', payment:'', sortKey:'updatedAt', sortDir:'desc' };
-
-// Populate batch dropdown (sorted by revenue, same order as batches list)
-const batchSelect = document.getElementById('order-batch-filter');
-batchSelect.innerHTML = '<option value="">Tất cả lô hàng</option>' +
-  D.batches.map(b => `<option value="${esc(b.name)}">${esc(b.name)} (${b.count})</option>`).join('');
-
-function paymentBadge(o) {
-  if (o.paymentMethod !== 'TRANSFER') return `<span class="text-mist">${PAY_VI[o.paymentMethod]||o.paymentMethod}</span>`;
-  if (!o.paymentVerifiedKnown) return `<span class="text-mist">Chuyển khoản</span>`;
-  return o.paymentVerified
-    ? `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ CK đã xác nhận</span>`
-    : `<span class="badge" style="background:rgba(251,146,60,.12); color:var(--rust)">⏳ CK chưa xác nhận</span>`;
-}
-
-function applySort(rows, key, dir) {
-  const mul = dir === 'asc' ? 1 : -1;
-  return rows.slice().sort((a, b) => {
-    let av = a[key], bv = b[key];
-    if (key === 'customerName' || key === 'batchId' || key === 'id' || key === 'status') {
-      av = (av || '').toString().toLowerCase();
-      bv = (bv || '').toString().toLowerCase();
-      return av < bv ? -1 * mul : av > bv ? 1 * mul : 0;
-    }
-    av = av || 0; bv = bv || 0;
-    return (av - bv) * mul;
-  });
-}
-
-function renderOrders() {
-  const { q, status, batch, payment, sortKey, sortDir } = orderFilterState;
-  const ql = q.toLowerCase().trim();
-  let rows = liveOrdersForUI.filter(o => {
-    if (status && o.status !== status) return false;
-    if (batch && o.batchId !== batch) return false;
-    if (payment === 'TRANSFER_VERIFIED' && !(o.paymentMethod === 'TRANSFER' && o.paymentVerified)) return false;
-    if (payment === 'TRANSFER_UNVERIFIED' && !(o.paymentMethod === 'TRANSFER' && !o.paymentVerified)) return false;
-    if (payment === 'CASH' && o.paymentMethod !== 'CASH') return false;
-    if (!ql) return true;
-    const hay = [o.id, o.customerName, o.address, o.batchId, o.customerPhone, ...(o.items||[]).map(i=>i.name)]
-      .join(' ').toLowerCase();
-    return hay.includes(ql);
-  });
-  rows = applySort(rows, sortKey, sortDir);
-  const display = rows.slice(0, 300);
-  document.getElementById('orders-tbody').innerHTML = display.map(o => `
-    <tr data-id="${esc(o.id)}">
-      <td class="text-mono" style="color:var(--current); font-size:12px">${esc(o.id)}${o.hasHistory?' <span title="Có lịch sử thay đổi" style="color:var(--sand)">●</span>':''}</td>
-      <td>${esc(o.customerName)}</td>
-      <td class="ellipsis text-mist" title="${esc(o.address)}">${esc(o.address)}</td>
-      <td class="ellipsis text-dim" style="max-width:140px; font-size:11.5px" title="${esc(o.batchId)}">${esc(o.batchId)}</td>
-      <td class="text-right money">${fmt(o.totalPrice)}</td>
-      <td><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></td>
-      <td>${paymentBadge(o)}</td>
-      <td class="text-dim text-mono" style="font-size:11.5px">${fmtDate(o.createdAt)}</td>
-    </tr>`).join('');
-  document.getElementById('orders-empty').classList.toggle('hidden', rows.length > 0);
-  document.getElementById('orders-count').textContent =
-    `Hiển thị ${display.length.toLocaleString('vi-VN')} / ${rows.length.toLocaleString('vi-VN')} đơn (tổng ${liveOrdersForUI.length.toLocaleString('vi-VN')})`;
-  document.querySelectorAll('#orders-tbody tr').forEach(tr => tr.addEventListener('click', () => openOrderDrawer(tr.dataset.id)));
-
-  // Cập nhật trạng thái icon sort trên header
-  document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
-    th.classList.toggle('sort-active', th.dataset.sort === sortKey);
-    th.classList.remove('sort-asc','sort-desc');
-    if (th.dataset.sort === sortKey) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-  });
-}
-document.getElementById('order-search').addEventListener('input', e => { orderFilterState.q = e.target.value; renderOrders(); });
-document.getElementById('order-status-filter').addEventListener('change', e => { orderFilterState.status = e.target.value; renderOrders(); });
-document.getElementById('order-batch-filter').addEventListener('change', e => { orderFilterState.batch = e.target.value; renderOrders(); });
-document.getElementById('order-payment-filter').addEventListener('change', e => { orderFilterState.payment = e.target.value; renderOrders(); });
-document.querySelectorAll('#view-orders thead th.sortable').forEach(th => {
-  th.addEventListener('click', () => {
-    const key = th.dataset.sort;
-    if (orderFilterState.sortKey === key) {
-      orderFilterState.sortDir = orderFilterState.sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      orderFilterState.sortKey = key;
-      orderFilterState.sortDir = (key === 'customerName' || key === 'id' || key === 'batchId' || key === 'status') ? 'asc' : 'desc';
-    }
-    renderOrders();
-  });
-});
-renderOrders();
 
 /* ════════════════ ORDER DETAIL DRAWER ════════════════ */
 const eventsByOrderId = {};
@@ -1221,32 +1625,208 @@ document.querySelectorAll('#anomaly-type-chips .chip').forEach(chip => {
 renderAnomalies();
 
 /* ════════════════ REPORT VIEW ════════════════ */
-document.getElementById('report-period').textContent =
-  `Kỳ báo cáo: ${D.meta.firstBackup} → ${D.meta.lastBackup} · Tạo lúc ${fmtDateTime(new Date(D.meta.generatedAt).getTime())}`;
+function renderReportView() {
+  const s = currentFilteredStats;
+  document.getElementById('report-period').textContent =
+    `Kỳ báo cáo: ${currentRangeLabel} · Xuất dữ liệu lúc ${fmtDateTime(Date.now())}`;
 
-document.getElementById('report-stats').innerHTML = [
-  { v: fmt(D.stats.totalRevenue), l:'Tổng doanh thu' },
-  { v: D.stats.totalOrders.toLocaleString('vi-VN'), l:'Tổng đơn hàng' },
-  { v: fmt(D.stats.avgOrderValue), l:'Giá trị TB/đơn' },
-  { v: ((D.stats.delivered/(D.stats.totalOrders||1))*100).toFixed(1)+'%', l:'Tỷ lệ giao thành công' },
-].map(s => `<div class="report-stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join('');
+  const successRate = s.totalOrders ? ((s.delivered / s.totalOrders) * 100).toFixed(1) + '%' : '0%';
+  document.getElementById('report-stats').innerHTML = [
+    { v: fmt(s.deliveredRevenue), l:'Doanh thu thực nhận' },
+    { v: s.totalOrders.toLocaleString('vi-VN'), l:'Tổng đơn hàng' },
+    { v: fmt(s.avgOrderValue), l:'Giá trị TB/đơn' },
+    { v: successRate, l:'Tỷ lệ giao thành công' },
+  ].map(st => `<div class="report-stat"><div class="v">${st.v}</div><div class="l">${st.l}</div></div>`).join('');
 
-// Insight tự động sinh
-const insights = [];
-if (D.topProducts[0]) insights.push({ icon:'🏆', html:`Sản phẩm bán chạy nhất là <b>${esc(D.topProducts[0].name)}</b>, đóng góp ${fmt(D.topProducts[0].revenue)} doanh thu.` });
-if (D.topCustomers[0]) insights.push({ icon:'👤', html:`Khách hàng mang lại doanh thu cao nhất: <b>${esc(D.topCustomers[0].name)}</b> với ${D.topCustomers[0].count} đơn (${fmt(D.topCustomers[0].revenue)}).` });
-const cancelRate = (D.stats.cancelled/(D.stats.totalOrders||1))*100;
-insights.push({ icon: cancelRate > 5 ? '🔺' : '✅', html: `Tỷ lệ huỷ đơn hiện tại là <b>${cancelRate.toFixed(1)}%</b>${cancelRate>5?' — cao hơn mức khuyến nghị (5%), nên xem lại nguyên nhân huỷ đơn.':'.'}` });
-if (D.anomalyTotal > 0) insights.push({ icon:'⚠️', html:`Hệ thống phát hiện <b>${D.anomalyTotal} điểm bất thường</b>, xem chi tiết tại tab Bất thường.` });
-const highSev = D.anomalies.filter(a=>a.severity==='high').length;
-if (highSev > 0) insights.push({ icon:'🔴', html:`Có <b>${highSev} bất thường mức độ cao</b> cần ưu tiên kiểm tra trước.` });
-document.getElementById('report-insights').innerHTML = insights.map(i => `
-  <div class="insight-card"><span class="insight-icon">${i.icon}</span><span class="insight-text">${i.html}</span></div>`).join('');
+  // Financial table
+  const totalBase = (s.totalRevenue || 1);
+  const finRows = [
+    { label: '✅ Doanh thu thực nhận (Đã giao)', count: s.delivered, val: s.deliveredRevenue, cls: 'money' },
+    { label: '⏳ Doanh thu đang xử lý / luân chuyển', count: (s.pending + s.inTransit + s.pickedUp), val: s.pipelineRevenue, cls: 'text-mist text-mono' },
+    { label: '🏦 Chuyển khoản chưa xác nhận (Rủi ro)', count: s.transferUnverified, val: s.transferUnverifiedRevenue, cls: 'money neg' },
+    { label: '❌ Doanh thu đơn đã huỷ trong kỳ', count: s.cancelled, val: s.cancelledRevenue, cls: 'money neg' }
+  ];
+  document.getElementById('report-financial-tbody').innerHTML = finRows.map(r => `
+    <tr>
+      <td>${r.label}</td>
+      <td class="text-right text-mono">${r.count}</td>
+      <td class="text-right ${r.cls}">${fmt(r.val)}</td>
+      <td class="text-right text-mono text-dim">${((r.val / totalBase) * 100).toFixed(1)}%</td>
+    </tr>
+  `).join('');
 
-document.getElementById('report-products-tbody').innerHTML = D.topProducts.map((p,i) => `
-  <tr><td class="text-mono text-dim">${i+1}</td><td>${esc(p.name)}</td>
-    <td class="text-right text-mono">${p.qty}</td><td class="text-right money">${fmt(p.revenue)}</td></tr>
-`).join('');
+  // Payment table
+  const activeOrders = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+  const transfer = activeOrders.filter(o => o.paymentMethod === 'TRANSFER');
+  const transferRev = transfer.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const transferVer = transfer.filter(o => o.paymentVerified === true);
+  const transferVerRev = transferVer.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const transferUnv = transfer.filter(o => o.paymentVerified !== true);
+  const transferUnvRev = transferUnv.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const cash = activeOrders.filter(o => o.paymentMethod === 'CASH');
+  const cashRev = cash.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const totalPayBase = (transferRev + cashRev) || 1;
+
+  const payRows = [
+    { label: 'Chuyển khoản (Đã duyệt)', count: transferVer.length, val: transferVerRev, cls: 'money' },
+    { label: 'Chuyển khoản (Chưa duyệt)', count: transferUnv.length, val: transferUnvRev, cls: 'money neg' },
+    { label: 'Tiền mặt (CASH)', count: cash.length, val: cashRev, cls: 'text-mist text-mono' },
+  ];
+  document.getElementById('report-payment-tbody').innerHTML = payRows.map(r => `
+    <tr>
+      <td>${r.label}</td>
+      <td class="text-right text-mono">${r.count}</td>
+      <td class="text-right ${r.cls}">${fmt(r.val)}</td>
+      <td class="text-right text-mono text-dim">${((r.val / totalPayBase) * 100).toFixed(1)}%</td>
+    </tr>
+  `).join('');
+
+  // Report insights
+  const insights = [];
+  if (currentFilteredProducts[0]) {
+    insights.push({ icon: '🏆', html: `Sản phẩm bán chạy nhất kỳ: <b>${esc(currentFilteredProducts[0].name)}</b> với ${currentFilteredProducts[0].qty.toLocaleString('vi-VN')} phần, đóng góp ${fmt(currentFilteredProducts[0].revenue)}.` });
+  }
+  if (currentFilteredCustomers[0]) {
+    insights.push({ icon: '👤', html: `Khách hàng đóng góp cao nhất: <b>${esc(currentFilteredCustomers[0].name)}</b> với ${currentFilteredCustomers[0].count} đơn (${fmt(currentFilteredCustomers[0].revenue)}).` });
+  }
+  const cancelRate = s.totalOrders ? (s.cancelled / s.totalOrders) * 100 : 0;
+  insights.push({
+    icon: cancelRate > 5 ? '🔺' : '✅',
+    html: `Tỷ lệ huỷ đơn trong kỳ là <b>${cancelRate.toFixed(1)}%</b> (${s.cancelled} đơn)${cancelRate > 5 ? ' — cao hơn ngưỡng an toàn (5%), cần rà soát nguyên nhân.' : ' — nằm trong giới hạn an toàn.'}`
+  });
+  if (s.transferUnverified > 0) {
+    insights.push({
+      icon: '🏦',
+      html: `Hiện có <b>${s.transferUnverified} đơn chuyển khoản chưa khớp sao kê</b> với tổng tiền <b>${fmt(s.transferUnverifiedRevenue)}</b>. Hãy đối soát với sao kê ngân hàng ngay.`
+    });
+  }
+  document.getElementById('report-insights').innerHTML = insights.map(i => `
+    <div class="insight-card"><span class="insight-icon">${i.icon}</span><span class="insight-text">${i.html}</span></div>`).join('');
+
+  // Top products table
+  const top10P = currentFilteredProducts.slice(0, 10);
+  document.getElementById('report-products-tbody').innerHTML = top10P.map((p, i) => `
+    <tr><td class="text-mono text-dim">${i+1}</td><td>${esc(p.name)}</td>
+      <td class="text-right text-mono">${p.qty.toLocaleString('vi-VN')}</td><td class="text-right money">${fmt(p.revenue)}</td></tr>
+  `).join('') || '<tr><td colspan="4" class="text-dim" style="text-align:center; padding:14px">Chưa có dữ liệu</td></tr>';
+
+  // Top customers table
+  const top10C = currentFilteredCustomers.slice(0, 10);
+  document.getElementById('report-customers-tbody').innerHTML = top10C.map((c, i) => `
+    <tr><td class="text-mono text-dim">${i+1}</td><td>${esc(c.name)}</td>
+      <td class="text-right text-mono">${c.count}</td><td class="text-right money">${fmt(c.revenue)}</td></tr>
+  `).join('') || '<tr><td colspan="4" class="text-dim" style="text-align:center; padding:14px">Chưa có dữ liệu</td></tr>';
+}
+
+/* ════════════════ EXCEL EXPORT ENGINE (SheetJS) ════════════════ */
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Thư viện Excel đang được tải, vui lòng thử lại sau 2 giây.');
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+
+  // 1. Sheet Đơn hàng
+  const ordersData = [
+    ['Mã đơn', 'Khách hàng', 'Số điện thoại', 'Địa chỉ', 'Lô hàng', 'Tổng tiền (VNĐ)', 'Trạng thái', 'Thanh toán', 'Xác nhận CK', 'Ngày tạo', 'Danh sách sản phẩm']
+  ];
+  currentFilteredOrders.forEach(o => {
+    const itemsStr = (o.items || []).map(it => `${it.name} (x${it.qty})`).join(', ');
+    ordersData.push([
+      o.id,
+      o.customerName,
+      o.customerPhone || '',
+      o.address,
+      o.batchId,
+      o.totalPrice,
+      STATUS_VI[o.status] || o.status,
+      PAY_VI[o.paymentMethod] || o.paymentMethod,
+      o.paymentMethod === 'TRANSFER' ? (o.paymentVerified ? 'Đã duyệt' : 'Chưa duyệt') : '—',
+      fmtDateTime(o.createdAt),
+      itemsStr
+    ]);
+  });
+  const wsOrders = XLSX.utils.aoa_to_sheet(ordersData);
+  XLSX.utils.book_append_sheet(wb, wsOrders, 'DonHang');
+
+  // 2. Sheet Doanh thu Lô hàng
+  const batchesData = [
+    ['Tên lô hàng', 'Số đơn', 'Đơn huỷ', 'Đơn xoá mềm', 'Tổng SL hàng (kg/phần)', 'Doanh thu (VNĐ)', 'Thời gian']
+  ];
+  currentFilteredBatches.forEach(b => {
+    batchesData.push([
+      b.name,
+      b.count,
+      b.cancelled || 0,
+      b.deletedCount || 0,
+      b.totalQty || 0,
+      b.revenue,
+      b.firstDate ? `${fmtDate(b.firstDate)} → ${fmtDate(b.lastDate)}` : '—'
+    ]);
+  });
+  const wsBatches = XLSX.utils.aoa_to_sheet(batchesData);
+  XLSX.utils.book_append_sheet(wb, wsBatches, 'DoanhThuLoHang');
+
+  // 3. Sheet Top Sản phẩm
+  const productsData = [
+    ['Xếp hạng', 'Tên sản phẩm', 'Số lượng đã bán', 'Doanh thu (VNĐ)', 'Số đơn đặt']
+  ];
+  currentFilteredProducts.forEach((p, idx) => {
+    productsData.push([
+      idx + 1,
+      p.name,
+      p.qty,
+      p.revenue,
+      p.orders
+    ]);
+  });
+  const wsProducts = XLSX.utils.aoa_to_sheet(productsData);
+  XLSX.utils.book_append_sheet(wb, wsProducts, 'TopSanPham');
+
+  // 4. Sheet Khách hàng thân thiết
+  const customersData = [
+    ['Xếp hạng', 'Tên khách hàng', 'Số điện thoại', 'Số đơn hàng', 'Tổng chi tiêu (VNĐ)']
+  ];
+  currentFilteredCustomers.forEach((c, idx) => {
+    customersData.push([
+      idx + 1,
+      c.name,
+      c.phone || '',
+      c.count,
+      c.revenue
+    ]);
+  });
+  const wsCustomers = XLSX.utils.aoa_to_sheet(customersData);
+  XLSX.utils.book_append_sheet(wb, wsCustomers, 'KhachHangVIP');
+
+  // Tải file xuống
+  const cleanLabel = currentRangeLabel.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = `BaoCao_EcoGo_${cleanLabel}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+/* ════════════════ DATE FILTER EVENTS ════════════════ */
+document.querySelectorAll('#date-quick-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#date-quick-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    applyDateFilter(chip.dataset.range);
+  });
+});
+
+document.getElementById('btn-apply-custom-date').addEventListener('click', () => {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  if (!from && !to) {
+    alert('Vui lòng chọn ngày bắt đầu hoặc ngày kết thúc.');
+    return;
+  }
+  document.querySelectorAll('#date-quick-chips .chip').forEach(c => c.classList.remove('active'));
+  applyDateFilter('custom', from, to);
+});
+
+// Initialize dashboard with full dataset
+applyDateFilter('all');
 </script>
 </body>
 </html>

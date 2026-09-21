@@ -72,6 +72,7 @@ jobs:
           "use strict";
           const admin = require("firebase-admin");
           const fs = require("fs");
+          const zlib = require("zlib");
 
           // Parse service account
           let serviceAccount;
@@ -137,18 +138,25 @@ jobs:
             }
 
             const date = new Date().toISOString().slice(0, 10);
-            const filename = "backup-" + date + ".json";
-            fs.writeFileSync(filename, JSON.stringify(backup, null, 2), "utf8");
+            const jsonStr = JSON.stringify(backup, null, 2);
+            const rawSizeKB = (Buffer.byteLength(jsonStr) / 1024).toFixed(1);
 
-            const fileSizeKB = (fs.statSync(filename).size / 1024).toFixed(1);
+            // Nén gzip trực tiếp để tiết kiệm dung lượng lưu trữ & đính kèm email
+            const compressed = zlib.gzipSync(Buffer.from(jsonStr, "utf8"), { level: 9 });
+            const filename = "backup-" + date + ".json.gz";
+            fs.writeFileSync(filename, compressed);
+
+            const gzSizeKB = (fs.statSync(filename).size / 1024).toFixed(1);
+            const ratio = ((1 - gzSizeKB / rawSizeKB) * 100).toFixed(1);
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
             console.log("=".repeat(50));
-            console.log("Backup hoan tat : " + filename);
-            console.log("Tong collections: " + (Object.keys(backup).length - 1));
-            console.log("Tong documents  : " + totalDocs);
-            console.log("Kich thuoc file : " + fileSizeKB + " KB");
-            console.log("Thoi gian chay  : " + elapsed + "s");
+            console.log("Backup hoan tat   : " + filename);
+            console.log("Tong collections  : " + (Object.keys(backup).length - 1));
+            console.log("Tong documents    : " + totalDocs);
+            console.log("Kich thuoc JSON   : " + rawSizeKB + " KB");
+            console.log("Kich thuoc nen GZ : " + gzSizeKB + " KB (giam " + ratio + "%)");
+            console.log("Thoi gian chay    : " + elapsed + "s");
             console.log("=".repeat(50));
           }
 
@@ -165,7 +173,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: firestore-backup-${{ steps.date.outputs.dateonly }}-${{ steps.date.outputs.dayname }}
-          path: backup-*.json
+          path: backup-*.json*
           retention-days: 90
 
       # ── 7. Trigger dashboard build ───────────────────────────────────────────
@@ -180,6 +188,7 @@ jobs:
       # ── 8. Gửi email khi thành công ──────────────────────────────────────────
       - name: Send backup via email
         if: success()
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -198,16 +207,17 @@ jobs:
             Repository  : ${{ github.repository }}
             Chi tiết    : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            File backup được đính kèm bên dưới.
+            File backup được nén Gzip (.json.gz) và đính kèm bên dưới.
             File cũng được lưu trên GitHub Artifacts trong 90 ngày.
 
             ---
             Email này được gửi tự động bởi GitHub Actions.
-          attachments: backup-*.json
+          attachments: backup-*.json*
 
       # ── 9. Gửi email khi thất bại ────────────────────────────────────────────
       - name: Notify on failure
         if: failure()
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com

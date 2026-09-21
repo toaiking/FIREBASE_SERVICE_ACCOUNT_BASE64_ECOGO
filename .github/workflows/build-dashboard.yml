@@ -39,15 +39,15 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            // Lấy danh sách tất cả artifacts tên bắt đầu bằng "firestore-backup-"
-            const artifacts = await github.rest.actions.listArtifactsForRepo({
+            // Lấy danh sách tất cả artifacts tên bắt đầu bằng "firestore-backup-" qua github.paginate (không bị kẹt giới hạn 100)
+            const allArtifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100,
             });
 
-            const backupArtifacts = artifacts.data.artifacts
-              .filter(a => a.name.startsWith('firestore-backup-') && !a.expired)
+            const backupArtifacts = allArtifacts
+              .filter(a => a.name && a.name.startsWith('firestore-backup-') && !a.expired)
               .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
             console.log(`Tìm thấy ${backupArtifacts.length} backup artifacts`);
@@ -75,8 +75,8 @@ jobs:
               }
             }
 
-            // Liệt kê các file đã tải
-            const files = fs.readdirSync('backups').filter(f => f.endsWith('.json'));
+            // Liệt kê các file đã tải (hỗ trợ cả .json và .json.gz)
+            const files = fs.readdirSync('backups').filter(f => f.match(/^backup-.*\.json(\.gz)?$/));
             console.log(`Đã tải ${files.length} file backup:`, files.join(', '));
 
       # ── Build dashboard HTML ─────────────────────────────────────────────────

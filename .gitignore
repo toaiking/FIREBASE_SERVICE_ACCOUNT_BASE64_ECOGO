@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build and data artifacts
+dist/
+backups/
+backup-*.json
+
+# Archives
+*.zip
+*.tar.gz
+
+# Environment & Secret files
+.env
+.env.local
+*.pem
+*.key
+serviceAccountKey.json
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

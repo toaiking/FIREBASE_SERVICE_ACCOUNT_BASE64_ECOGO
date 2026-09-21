@@ -18,6 +18,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 
 const BACKUP_DIR = "./backups";
 const DIST_DIR = "./dist";
@@ -32,7 +33,7 @@ if (!fs.existsSync(BACKUP_DIR)) {
 
 const backupFiles = fs
   .readdirSync(BACKUP_DIR)
-  .filter((f) => f.match(/^backup-\d{4}-\d{2}-\d{2}\.json$/))
+  .filter((f) => f.match(/^backup-\d{4}-\d{2}-\d{2}\.json(\.gz)?$/))
   .sort();
 
 if (backupFiles.length === 0) {
@@ -45,10 +46,12 @@ console.log(`📦 ${backupFiles.length} file backup: ${backupFiles.join(", ")}`)
 const snapshots = []; // [{ date, orders: Map<id, order> }]
 
 for (const file of backupFiles) {
-  const date = file.replace("backup-", "").replace(".json", "");
+  const date = file.replace("backup-", "").replace(/\.json(\.gz)?$/, "");
   let raw;
   try {
-    raw = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, file), "utf8"));
+    const buf = fs.readFileSync(path.join(BACKUP_DIR, file));
+    const str = file.endsWith(".gz") ? zlib.gunzipSync(buf).toString("utf8") : buf.toString("utf8");
+    raw = JSON.parse(str);
   } catch (e) {
     console.warn(`⚠️  Bỏ qua file lỗi: ${file} (${e.message})`);
     continue;
