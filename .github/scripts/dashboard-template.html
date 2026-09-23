@@ -296,6 +296,91 @@ nav.tabs::-webkit-scrollbar { display: none; }
 }
 
 /* ════════════════════════════════════════════════════════════
+   RETENTION / REPEAT CUSTOMER SUMMARY & COHORT
+   ════════════════════════════════════════════════════════════ */
+.retention-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.ret-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color .15s, transform .15s;
+}
+.ret-stat:hover { border-color: var(--dim); transform: translateY(-1px); }
+.ret-icon { font-size: 20px; flex-shrink: 0; }
+.ret-title {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--dim);
+  font-weight: 700;
+}
+.ret-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foam);
+  margin-top: 1px;
+}
+.ret-sub {
+  font-size: 10.5px;
+  color: var(--mist);
+  margin-top: 1px;
+}
+
+.cohort-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  transition: background .12s;
+}
+.cohort-legend-row:hover {
+  background: var(--surface-2);
+}
+.cohort-legend-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.cohort-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cohort-legend-name {
+  color: var(--foam);
+  font-weight: 500;
+}
+.cohort-legend-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.cohort-val {
+  color: var(--tide);
+  font-weight: 600;
+}
+.cohort-pct {
+  color: var(--dim);
+  width: 38px;
+  text-align: right;
+}
+
+/* ════════════════════════════════════════════════════════════
    PEAK HOURS HEATMAP (24x7)
    ════════════════════════════════════════════════════════════ */
 .hm-summary-bar {
@@ -807,6 +892,7 @@ select:focus { border-color: var(--tide); }
   .kpi-card:last-child { grid-column: span 2; }
   .weekend-summary-bar { grid-template-columns: repeat(4, 1fr); }
   .hm-summary-bar { grid-template-columns: repeat(4, 1fr); }
+  .retention-summary-bar { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* Tablet Portrait (641px - 980px) */
@@ -819,6 +905,7 @@ select:focus { border-color: var(--tide); }
   .kpi-card:last-child { grid-column: span 3; }
   .weekend-summary-bar { grid-template-columns: repeat(2, 1fr); }
   .hm-summary-bar { grid-template-columns: repeat(2, 1fr); }
+  .retention-summary-bar { grid-template-columns: repeat(2, 1fr); }
   .grid-2, .grid-2b { grid-template-columns: 1fr; }
   .report-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -907,6 +994,21 @@ select:focus { border-color: var(--tide); }
   .wk-title { font-size: 9.5px; }
   .wk-val { font-size: 13.5px; }
   .wk-sub { font-size: 10px; }
+
+  /* Retention summary: 2x2 grid */
+  .retention-summary-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 8px 0 12px;
+  }
+  .ret-stat {
+    padding: 9px 10px;
+    gap: 8px;
+  }
+  .ret-icon { font-size: 17px; }
+  .ret-title { font-size: 9.5px; }
+  .ret-val { font-size: 13.5px; }
+  .ret-sub { font-size: 10px; }
 
   /* Heatmap summary: 2x2 grid */
   .hm-summary-bar {
@@ -1154,6 +1256,75 @@ select:focus { border-color: var(--tide); }
             </div>
           </div>
           <span class="hm-legend-note">💡 Nhấn hoặc rê chuột vào ô bất kỳ để xem chi tiết số đơn &amp; doanh thu</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="eyebrow">Khách hàng Thân thiết &amp; Tỷ lệ Khách quay lại (Customer Retention)</p>
+
+    <!-- Thẻ tóm tắt chỉ số khách quay lại -->
+    <div class="retention-summary-bar">
+      <div class="ret-stat" style="border-left: 3px solid var(--kelp)">
+        <span class="ret-icon">🔄</span>
+        <div>
+          <div class="ret-title">Tỷ lệ Khách quay lại</div>
+          <div class="ret-val" id="ret-rate-val" style="color:var(--kelp)">—</div>
+          <div class="ret-sub" id="ret-rate-sub">—</div>
+        </div>
+      </div>
+      <div class="ret-stat" style="border-left: 3px solid var(--tide)">
+        <span class="ret-icon">📦</span>
+        <div>
+          <div class="ret-title">Đơn từ Khách quen</div>
+          <div class="ret-val" id="ret-orders-val" style="color:var(--tide)">—</div>
+          <div class="ret-sub" id="ret-orders-sub">—</div>
+        </div>
+      </div>
+      <div class="ret-stat" style="border-left: 3px solid var(--sand)">
+        <span class="ret-icon">💰</span>
+        <div>
+          <div class="ret-title">Doanh thu Khách quen</div>
+          <div class="ret-val" id="ret-rev-val" style="color:var(--sand)">—</div>
+          <div class="ret-sub" id="ret-rev-sub">—</div>
+        </div>
+      </div>
+      <div class="ret-stat" style="border-left: 3px solid var(--coral)">
+        <span class="ret-icon">👑</span>
+        <div>
+          <div class="ret-title">Chi tiêu TB / Khách quen</div>
+          <div class="ret-val" id="ret-aov-val" style="color:var(--coral)">—</div>
+          <div class="ret-sub" id="ret-aov-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Biểu đồ: Xu hướng & Phân nhóm -->
+    <div class="grid-2b" style="margin-bottom:16px;">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title" id="ret-trend-title">Xu hướng: Khách mới vs Khách quay lại
+            <span class="sub" id="ret-trend-sub">🟩 Khách quay lại · 🟦 Khách mới · 🟨 % Quay lại</span>
+          </span>
+          <div class="chip-group" id="retention-mode-chips">
+            <button class="chip active" data-retmode="orders">📦 Số đơn</button>
+            <button class="chip" data-retmode="revenue">💰 Doanh thu</button>
+          </div>
+        </div>
+        <div class="panel-body"><div class="chart-box"><canvas id="chartRetentionTrend"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title" id="ret-cohort-title">Phân nhóm Tần suất Mua &amp; Khách VIP
+            <span class="sub" id="ret-cohort-sub">Tỷ trọng đóng góp theo hạng khách</span>
+          </span>
+          <div class="chip-group" id="cohort-mode-chips">
+            <button class="chip active" data-cohortmode="customers">👥 Số khách</button>
+            <button class="chip" data-cohortmode="revenue">💰 Doanh thu</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="chart-box" style="height: 175px;"><canvas id="chartRetentionCohort"></canvas></div>
+          <div id="retention-cohort-legend" style="margin-top: 10px;"></div>
         </div>
       </div>
     </div>
@@ -1615,6 +1786,7 @@ function applyDateFilter(key, customFrom, customTo) {
   renderKpis();
   renderCharts();
   renderHeatmap();
+  renderRetentionSection();
   renderProductsBars();
   renderCustomersBars();
   renderBatchesOverview();
@@ -2090,6 +2262,343 @@ document.querySelectorAll('#time-view-chips .chip').forEach(chip => {
     chip.classList.add('active');
     timeViewMode = chip.dataset.timeview;
     renderCharts();
+  });
+});
+
+/* ════════════════ RETENTION & REPEAT CUSTOMER CHARTS ════════════════ */
+let retentionMode = 'orders'; // 'orders' | 'revenue'
+let cohortMode = 'customers'; // 'customers' | 'revenue'
+let chartRetentionTrendInstance = null;
+let chartRetentionCohortInstance = null;
+
+// Lập bản đồ lịch sử đơn hàng đầu tiên của mỗi khách hàng trên toàn bộ CSDL
+const custAllTimeFirstTs = {};
+const custAllTimeOrderCount = {};
+const custAllTimeRevenue = {};
+
+for (const o of D.orders) {
+  if (o.deleted || o.status === 'CANCELLED') continue;
+  const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
+  const ts = getOrderTs(o);
+  if (!custAllTimeFirstTs[cid] || ts < custAllTimeFirstTs[cid]) {
+    custAllTimeFirstTs[cid] = ts;
+  }
+  custAllTimeOrderCount[cid] = (custAllTimeOrderCount[cid] || 0) + 1;
+  custAllTimeRevenue[cid] = (custAllTimeRevenue[cid] || 0) + (o.totalPrice || 0);
+}
+
+function renderRetentionSection() {
+  const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+
+  const periodCustOrders = {};
+  const periodCustRevenue = {};
+  let totalPeriodOrders = active.length;
+  let totalPeriodRevenue = 0;
+  let repeatOrdersCount = 0;
+  let repeatOrdersRevenue = 0;
+  let newOrdersCount = 0;
+  let newOrdersRevenue = 0;
+
+  for (const o of active) {
+    const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
+    const price = o.totalPrice || 0;
+    const ts = getOrderTs(o);
+    totalPeriodRevenue += price;
+
+    if (!periodCustOrders[cid]) {
+      periodCustOrders[cid] = 0;
+      periodCustRevenue[cid] = 0;
+    }
+    periodCustOrders[cid] += 1;
+    periodCustRevenue[cid] += price;
+
+    const firstTs = custAllTimeFirstTs[cid];
+    if (firstTs && ts > firstTs) {
+      repeatOrdersCount++;
+      repeatOrdersRevenue += price;
+    } else {
+      newOrdersCount++;
+      newOrdersRevenue += price;
+    }
+  }
+
+  const uniqueCids = Object.keys(periodCustOrders);
+  const totalUniqueCustomers = uniqueCids.length;
+
+  let repeatCustomersCount = 0;
+  let repeatCustomersTotalSpent = 0;
+  for (const cid of uniqueCids) {
+    if ((custAllTimeOrderCount[cid] || 0) >= 2) {
+      repeatCustomersCount++;
+      repeatCustomersTotalSpent += periodCustRevenue[cid];
+    }
+  }
+
+  const repeatCustRate = totalUniqueCustomers > 0 ? ((repeatCustomersCount / totalUniqueCustomers) * 100).toFixed(1) : '0';
+  const repeatOrderRate = totalPeriodOrders > 0 ? ((repeatOrdersCount / totalPeriodOrders) * 100).toFixed(1) : '0';
+  const repeatRevRate = totalPeriodRevenue > 0 ? ((repeatOrdersRevenue / totalPeriodRevenue) * 100).toFixed(1) : '0';
+  const avgRevPerRepeatCust = repeatCustomersCount > 0 ? Math.round(repeatCustomersTotalSpent / repeatCustomersCount) : 0;
+  const avgOrdersPerRepeatCust = repeatCustomersCount > 0 ? (repeatOrdersCount / repeatCustomersCount).toFixed(1) : '0';
+
+  // 1. Cập nhật 4 thẻ tóm tắt
+  document.getElementById('ret-rate-val').textContent = `${repeatCustRate}%`;
+  document.getElementById('ret-rate-sub').textContent = `${repeatCustomersCount.toLocaleString('vi-VN')} / ${totalUniqueCustomers.toLocaleString('vi-VN')} khách (≥2 đơn)`;
+
+  document.getElementById('ret-orders-val').textContent = `${repeatOrderRate}%`;
+  document.getElementById('ret-orders-sub').textContent = `${repeatOrdersCount.toLocaleString('vi-VN')} / ${totalPeriodOrders.toLocaleString('vi-VN')} đơn từ khách quen`;
+
+  document.getElementById('ret-rev-val').textContent = fmtK(repeatOrdersRevenue);
+  document.getElementById('ret-rev-sub').textContent = `${repeatRevRate}% tổng doanh thu (${fmt(repeatOrdersRevenue)})`;
+
+  document.getElementById('ret-aov-val').textContent = fmtK(avgRevPerRepeatCust);
+  document.getElementById('ret-aov-sub').textContent = `TB ~${avgOrdersPerRepeatCust} đơn / khách quen`;
+
+  // 2. Biểu đồ 1: Xu hướng Khách mới vs Khách quay lại theo thời gian
+  let isDailyTrend = false;
+  if (currentStartTs && currentEndTs) {
+    const diffDays = (currentEndTs - currentStartTs) / 86400000;
+    if (diffDays <= 35) isDailyTrend = true;
+  }
+
+  const trendBuckets = {};
+  for (const o of active) {
+    const d = new Date(getOrderTs(o));
+    const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
+    const key = isDailyTrend ? d.toISOString().slice(0, 10) : d.toISOString().slice(0, 7);
+    if (!trendBuckets[key]) {
+      const label = isDailyTrend ? fmtDate(d.getTime()) : `Tháng ${d.getMonth()+1}/${d.getFullYear()}`;
+      trendBuckets[key] = { label, newCount: 0, repeatCount: 0, newRev: 0, repeatRev: 0 };
+    }
+    const isRepeat = (custAllTimeFirstTs[cid] && getOrderTs(o) > custAllTimeFirstTs[cid]);
+    const price = o.totalPrice || 0;
+    if (isRepeat) {
+      trendBuckets[key].repeatCount++;
+      trendBuckets[key].repeatRev += price;
+    } else {
+      trendBuckets[key].newCount++;
+      trendBuckets[key].newRev += price;
+    }
+  }
+
+  const sortedTrendKeys = Object.keys(trendBuckets).sort();
+  const trendLabels = sortedTrendKeys.map(k => trendBuckets[k].label);
+  
+  const trendNewData = sortedTrendKeys.map(k => retentionMode === 'orders' ? trendBuckets[k].newCount : trendBuckets[k].newRev);
+  const trendRepeatData = sortedTrendKeys.map(k => retentionMode === 'orders' ? trendBuckets[k].repeatCount : trendBuckets[k].repeatRev);
+  const trendRateData = sortedTrendKeys.map(k => {
+    const b = trendBuckets[k];
+    const total = retentionMode === 'orders' ? (b.newCount + b.repeatCount) : (b.newRev + b.repeatRev);
+    const rep = retentionMode === 'orders' ? b.repeatCount : b.repeatRev;
+    return total > 0 ? Math.round((rep / total) * 1000) / 10 : 0;
+  });
+
+  // Cập nhật nhãn phụ
+  const subElem = document.getElementById('ret-trend-sub');
+  if (subElem) {
+    subElem.textContent = retentionMode === 'orders'
+      ? '🟩 Đơn khách quay lại · 🟦 Đơn khách mới · 🟨 % Đơn quay lại'
+      : '🟩 Doanh thu khách quen · 🟦 Doanh thu khách mới · 🟨 % DT quay lại';
+  }
+
+  if (chartRetentionTrendInstance) chartRetentionTrendInstance.destroy();
+  chartRetentionTrendInstance = new Chart(document.getElementById('chartRetentionTrend'), {
+    type: 'bar',
+    data: {
+      labels: trendLabels.length ? trendLabels : ['Chưa có dữ liệu'],
+      datasets: [
+        {
+          type: 'bar',
+          label: retentionMode === 'orders' ? '🟩 Đơn khách quay lại' : '🟩 Doanh thu khách quay lại',
+          data: trendRepeatData,
+          backgroundColor: 'rgba(45, 212, 191, 0.75)',
+          borderColor: '#2dd4bf',
+          borderWidth: 1.5,
+          borderRadius: 3,
+          stack: 'ret',
+          order: 2,
+          yAxisID: 'y'
+        },
+        {
+          type: 'bar',
+          label: retentionMode === 'orders' ? '🟦 Đơn khách mới (lần đầu)' : '🟦 Doanh thu khách mới',
+          data: trendNewData,
+          backgroundColor: 'rgba(56, 189, 248, 0.55)',
+          borderColor: '#38bdf8',
+          borderWidth: 1.5,
+          borderRadius: 3,
+          stack: 'ret',
+          order: 3,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: '🟨 Tỷ lệ khách quay lại (%)',
+          data: trendRateData,
+          borderColor: '#fbbf24',
+          backgroundColor: 'rgba(251, 191, 36, 0.15)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#fbbf24',
+          pointHoverRadius: 6,
+          tension: 0.3,
+          order: 1,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true, position: 'top', align: 'end',
+          labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8 }
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              if (c.dataset.yAxisID === 'y1') return `🟨 Tỷ lệ quay lại: ${c.raw}%`;
+              if (retentionMode === 'orders') return `${c.dataset.label}: ${c.raw.toLocaleString('vi-VN')} đơn`;
+              return `${c.dataset.label}: ${fmt(c.raw)}`;
+            },
+            afterBody: (items) => {
+              const idx = items[0].dataIndex;
+              const k = sortedTrendKeys[idx];
+              if (!k) return '';
+              const b = trendBuckets[k];
+              const totOrders = b.newCount + b.repeatCount;
+              const totRev = b.newRev + b.repeatRev;
+              const repPct = totOrders > 0 ? ((b.repeatCount / totOrders) * 100).toFixed(1) : 0;
+              const repRevPct = totRev > 0 ? ((b.repeatRev / totRev) * 100).toFixed(1) : 0;
+              return `───────────────────────
+Tổng đơn: ${totOrders.toLocaleString('vi-VN')} (Khách quen: ${repPct}%)
+Tổng DT: ${fmt(totRev)} (Khách quen: ${repRevPct}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 } } },
+        y: {
+          stacked: true,
+          position: 'left',
+          ticks: {
+            callback: v => retentionMode === 'orders' ? v.toLocaleString('vi-VN') : fmtK(v),
+            font: { size: 10 }
+          }
+        },
+        y1: {
+          position: 'right',
+          min: 0,
+          max: 100,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            callback: v => v + '%',
+            font: { size: 9.5 }
+          }
+        }
+      }
+    }
+  });
+
+  // 3. Biểu đồ 2: Phân nhóm Tần suất Mua & Khách VIP (Cohort)
+  const tiers = [
+    { name: '1 đơn (Khách mới)', min: 1, max: 1, count: 0, rev: 0, color: '#94a3b8' },
+    { name: '2 - 3 đơn (Tiềm năng)', min: 2, max: 3, count: 0, rev: 0, color: '#38bdf8' },
+    { name: '4 - 5 đơn (Khách quen)', min: 4, max: 5, count: 0, rev: 0, color: '#2dd4bf' },
+    { name: '6 - 10 đơn (Thân thiết)', min: 6, max: 10, count: 0, rev: 0, color: '#fbbf24' },
+    { name: '> 10 đơn (Khách VIP)', min: 11, max: 999999, count: 0, rev: 0, color: '#fb7185' }
+  ];
+
+  for (const cid of uniqueCids) {
+    const lifetimeCount = custAllTimeOrderCount[cid] || 1;
+    const revInPeriod = periodCustRevenue[cid] || 0;
+    for (const t of tiers) {
+      if (lifetimeCount >= t.min && lifetimeCount <= t.max) {
+        t.count++;
+        t.rev += revInPeriod;
+        break;
+      }
+    }
+  }
+
+  const cohortLabels = tiers.map(t => t.name);
+  const cohortData = tiers.map(t => cohortMode === 'customers' ? t.count : t.rev);
+  const cohortColors = tiers.map(t => t.color);
+  const totalCohortVal = cohortData.reduce((a, b) => a + b, 0);
+
+  const cohortSubElem = document.getElementById('ret-cohort-sub');
+  if (cohortSubElem) {
+    cohortSubElem.textContent = cohortMode === 'customers'
+      ? `Phân bổ ${totalUniqueCustomers.toLocaleString('vi-VN')} khách hàng theo số lượng đơn đã đặt`
+      : 'Tỷ trọng doanh thu đóng góp theo từng hạng khách hàng';
+  }
+
+  if (chartRetentionCohortInstance) chartRetentionCohortInstance.destroy();
+  chartRetentionCohortInstance = new Chart(document.getElementById('chartRetentionCohort'), {
+    type: 'doughnut',
+    data: {
+      labels: cohortLabels,
+      datasets: [{
+        data: cohortData,
+        backgroundColor: cohortColors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              const val = c.raw;
+              const pct = totalCohortVal > 0 ? ((val / totalCohortVal) * 100).toFixed(1) : 0;
+              if (cohortMode === 'customers') return `${c.label}: ${val.toLocaleString('vi-VN')} khách (${pct}%)`;
+              return `${c.label}: ${fmt(val)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Render bảng tiến trình mini bên dưới biểu đồ
+  document.getElementById('retention-cohort-legend').innerHTML = tiers.map(t => {
+    const val = cohortMode === 'customers' ? t.count : t.rev;
+    const pct = totalCohortVal > 0 ? ((val / totalCohortVal) * 100).toFixed(1) : '0';
+    const valStr = cohortMode === 'customers' ? `${t.count} khách` : fmtK(t.rev);
+    return `
+      <div class="cohort-legend-row">
+        <div class="cohort-legend-left">
+          <span class="cohort-dot" style="background:${t.color}"></span>
+          <span class="cohort-legend-name">${t.name}</span>
+        </div>
+        <div class="cohort-legend-right">
+          <span class="cohort-val">${valStr}</span>
+          <span class="cohort-pct">${pct}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Event listeners cho các nút chuyển đổi Retention Mode & Cohort Mode
+document.querySelectorAll('#retention-mode-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#retention-mode-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    retentionMode = chip.dataset.retmode;
+    renderRetentionSection();
+  });
+});
+
+document.querySelectorAll('#cohort-mode-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#cohort-mode-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    cohortMode = chip.dataset.cohortmode;
+    renderRetentionSection();
   });
 });
 
@@ -2727,6 +3236,18 @@ function renderReportView() {
     insights.push({
       icon: '🏦',
       html: `Hiện có <b>${s.transferUnverified} đơn chuyển khoản chưa khớp sao kê</b> với tổng tiền <b>${fmt(s.transferUnverifiedRevenue)}</b>. Hãy đối soát với sao kê ngân hàng ngay.`
+    });
+  }
+  if (currentFilteredCustomers.length > 0) {
+    let repCust = 0;
+    for (const c of currentFilteredCustomers) {
+      const cid = (c.phone || c.name || '').toLowerCase();
+      if ((custAllTimeOrderCount[cid] || 0) >= 2) repCust++;
+    }
+    const repPct = ((repCust / currentFilteredCustomers.length) * 100).toFixed(1);
+    insights.push({
+      icon: '🔄',
+      html: `Tỷ lệ khách quen quay lại đạt <b>${repPct}%</b> (${repCust.toLocaleString('vi-VN')} / ${currentFilteredCustomers.length.toLocaleString('vi-VN')} khách hàng). Nhóm khách hàng thân thiết là động lực tăng trưởng doanh thu cốt lõi của cửa hàng.`
     });
   }
   document.getElementById('report-insights').innerHTML = insights.map(i => `
