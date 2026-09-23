@@ -713,115 +713,316 @@ nav.tabs::-webkit-scrollbar { display: none; }
 /* ════════════════════════════════════════════════════════════
    SALES VELOCITY & HEALTH BENCHMARKS (MỐC ĐO CHUYỂN ĐỘNG)
    ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   SALES VELOCITY RADAR (MODERN GLASSMORPHISM REDESIGN)
+   ════════════════════════════════════════════════════════════ */
+.velocity-panel-wrap {
+  margin-bottom: 18px;
+  background: rgba(13, 20, 32, 0.65) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border-radius: 14px !important;
+  padding: 16px 16px 18px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.velocity-pulse-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.velocity-pulse-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  transition: all .15s ease;
+  user-select: none;
+}
+.velocity-pulse-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.v-pill-green {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.v-pill-red {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+.v-pill-amber {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.v-pill-cyan {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+.v-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot-green { background: #10b981; box-shadow: 0 0 6px #10b981; }
+.dot-red { background: #f43f5e; box-shadow: 0 0 8px #f43f5e; animation: vPulseDotRed 1.8s infinite; }
+.dot-amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+.dot-cyan { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+@keyframes vPulseDotRed {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.6; }
+}
+.v-pill-label { color: #94a3b8; font-weight: 500; }
+.v-pill-val { color: #f8fafc; font-weight: 700; }
+
 .velocity-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
 .velocity-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 13px 13px 11px;
+  border-radius: 12px;
+  padding: 13px 13px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  transition: transform .15s ease, border-color .15s ease;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  min-height: 275px;
 }
 .velocity-card:hover {
   transform: translateY(-2px);
-  border-color: var(--tide);
 }
+.v-theme-green {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(13, 20, 32, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.v-theme-green:hover {
+  border-color: rgba(16, 185, 129, 0.65);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.12);
+}
+.v-theme-red {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.09) 0%, rgba(24, 15, 20, 0.92) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 4px 18px rgba(244, 63, 94, 0.08);
+}
+.v-theme-red:hover {
+  border-color: rgba(244, 63, 94, 0.7);
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.2);
+}
+.v-theme-cyan {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.06) 0%, rgba(13, 20, 32, 0.9) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.v-theme-cyan:hover {
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.12);
+}
+.v-theme-amber {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(20, 18, 14, 0.9) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.v-theme-amber:hover {
+  border-color: rgba(245, 158, 11, 0.65);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.12);
+}
+.v-theme-purple {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.06) 0%, rgba(18, 14, 25, 0.9) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+.v-theme-purple:hover {
+  border-color: rgba(168, 85, 247, 0.65);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.12);
+}
+
 .velocity-card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .velocity-card-title {
   font-size: 11px;
   font-weight: 700;
-  color: var(--mist);
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 5px;
   text-transform: uppercase;
   letter-spacing: .03em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.velocity-card-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .velocity-badge-status {
   font-size: 9.5px;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
   white-space: nowrap;
   font-family: var(--font-mono);
-}
-.v-status-good {
-  background: rgba(52, 211, 153, 0.15);
-  color: var(--kelp);
-  border: 1px solid rgba(52, 211, 153, 0.3);
-}
-.v-status-warn {
-  background: rgba(251, 191, 36, 0.15);
-  color: var(--sand);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-}
-.v-status-alert {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.2);
-}
-.velocity-card-val {
-  font-size: 19px;
-  font-weight: 800;
-  font-family: var(--font-mono);
-  color: var(--foam);
-  margin-bottom: 2px;
-  display: flex;
-  align-items: baseline;
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
 }
-.velocity-card-val .sub-unit {
+.v-status-good {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.v-status-warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.v-status-alert {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.2);
+}
+
+.velocity-card-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.velocity-card-val {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.v-delta-badge {
   font-size: 11px;
-  color: var(--mist);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.delta-pos {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.delta-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.velocity-card-sub {
+  font-size: 11px;
+  color: #94a3b8;
   font-weight: 500;
+  margin-bottom: 7px;
 }
 .velocity-target-line {
   font-size: 10.5px;
-  color: var(--dim);
+  color: #64748b;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 .velocity-track {
   width: 100%;
-  height: 5px;
-  background: var(--depth);
-  border-radius: 3px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 8px;
-  border: 1px solid var(--line-soft);
+  margin-bottom: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 .velocity-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width .4s ease;
+  border-radius: 999px;
+  transition: width .5s ease;
 }
+.velocity-scale-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 9px;
+}
+.scale-highlight-green { color: #34d399; font-weight: 600; }
+.scale-highlight-red { color: #fb7185; font-weight: 600; }
+.scale-highlight-cyan { color: #38bdf8; font-weight: 600; }
+.scale-highlight-amber { color: #fbbf24; font-weight: 600; }
+.scale-highlight-purple { color: #c084fc; font-weight: 600; }
+
 .velocity-action-text {
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--mist);
-  background: var(--depth);
-  padding: 6px 8px;
-  border-radius: 6px;
-  border-left: 2.5px solid var(--tide);
+  font-size: 10.8px;
+  line-height: 1.42;
+  color: #cbd5e1;
+  padding: 8px 9px;
+  border-radius: 8px;
+  border: 1px solid;
 }
-.velocity-action-text b {
-  color: var(--foam);
+.velocity-action-text b { color: #fff; }
+.action-green {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.action-red {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: #fecdd3;
+}
+.action-cyan {
+  background: rgba(56, 189, 248, 0.05);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+.action-amber {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.action-purple {
+  background: rgba(168, 85, 247, 0.05);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.velocity-btn-action {
+  width: 100%;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+  transition: all .18s ease;
+}
+.velocity-btn-action:hover {
+  background: linear-gradient(135deg, #fb7185, #f43f5e);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.45);
+}
+.velocity-btn-action:active {
+  transform: translateY(0);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2174,110 +2375,195 @@ select:focus { border-color: var(--tide); }
       </div>
     </div>
 
-    <!-- ═══════════════ BẢNG MỐC ĐO CHUYỂN ĐỘNG BÁN HÀNG ═══════════════ -->
-    <div class="panel" style="margin-bottom:16px; border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.02);">
-      <div class="panel-head" style="background: rgba(56, 189, 248, 0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span class="panel-title" style="display:flex; align-items:center; gap:8px;">
-          <span>🎯</span> MỐC ĐO CHUYỂN ĐỘNG &amp; SỨC KHỎE BÁN HÀNG (SALES VELOCITY RADAR)
-          <span class="sub">5 mốc định lượng thời gian thực so với Ngưỡng an toàn để đưa ra hành động kịp thời</span>
-        </span>
-        <span class="sev-badge sev-low" style="font-size:11px; padding:3px 8px;">ĐANG THEO DÕI THỜI GIAN THỰC</span>
+    <!-- ═══════════════ BẢNG MỐC ĐO CHUYỂN ĐỘNG BÁN HÀNG (SALES VELOCITY RADAR) ═══════════════ -->
+    <div class="panel velocity-panel-wrap">
+      <!-- 4 Quick Status Pills Bar -->
+      <div class="velocity-pulse-bar">
+        <div class="velocity-pulse-pill v-pill-green">
+          <span class="v-pulse-dot dot-green"></span>
+          <span class="v-pill-label">Sức khỏe vận hành:</span>
+          <span class="v-pill-val" id="top-status-health">Ổn định</span>
+        </div>
+        <div class="velocity-pulse-pill v-pill-red" id="top-btn-p1" style="cursor:pointer;" title="Bấm để xem danh sách khách P1 khẩn cấp">
+          <span class="v-pulse-dot dot-red"></span>
+          <span class="v-pill-label">Cần xử lý:</span>
+          <span class="v-pill-val" id="top-status-p1">1 cảnh báo khẩn cấp</span>
+        </div>
+        <div class="velocity-pulse-pill v-pill-amber">
+          <span class="v-pulse-dot dot-amber"></span>
+          <span class="v-pill-label">Cơ hội Upsell:</span>
+          <span class="v-pill-val" id="top-status-upsell">+17.2K / đơn</span>
+        </div>
+        <div class="velocity-pulse-pill v-pill-cyan">
+          <span class="v-pulse-dot dot-cyan"></span>
+          <span class="v-pill-label">Khách quen cốt lõi:</span>
+          <span class="v-pill-val" id="top-status-repeat">84.4% shop</span>
+        </div>
       </div>
-      <div class="panel-body">
-        <div class="velocity-grid">
-          <!-- 1. Doanh thu khách quen -->
-          <div class="velocity-card" style="border-left: 3.5px solid var(--kelp);">
+
+      <!-- 5 Modern Cards Grid -->
+      <div class="velocity-grid">
+        <!-- 1. Doanh thu khách quen -->
+        <div class="velocity-card v-theme-green">
+          <div>
             <div class="velocity-card-head">
-              <span class="velocity-card-title">🔄 Doanh thu Khách quen</span>
-              <span class="velocity-badge-status v-status-good" id="v-status-repeat">🟢 VƯỢT CHUẨN</span>
+              <span class="velocity-card-title">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; background:rgba(56,189,248,0.2); font-size:11px;">🗂️</span>
+                <span>DOANH THU KHÁCH QUEN</span>
+              </span>
+              <span class="velocity-badge-status v-status-good" id="v-status-repeat">● VƯỢT CHUẨN</span>
             </div>
-            <div class="velocity-card-val"><span id="v-val-repeat">84.4%</span> <span class="sub-unit">(<span id="v-sub-repeat-rev">338M</span> / <span id="v-sub-total-rev">400M</span>)</span></div>
+            <div class="velocity-card-val-row">
+              <span class="velocity-card-val" id="v-val-repeat">84.4%</span>
+              <span class="v-delta-badge delta-pos" id="v-delta-repeat">+9.4%</span>
+            </div>
+            <div class="velocity-card-sub">(<span id="v-sub-repeat-rev">338M</span> / <span id="v-sub-total-rev">400M</span>)</div>
             <div class="velocity-target-line">
-              <span>Ngưỡng chuẩn an toàn:</span>
+              <span>Ngưỡng an toàn:</span>
               <b style="color:var(--kelp);">≥ 75%</b>
             </div>
             <div class="velocity-track">
-              <div class="velocity-fill" id="v-fill-repeat" style="width: 93%; background: var(--kelp);"></div>
+              <div class="velocity-fill" id="v-fill-repeat" style="width: 93%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
             </div>
-            <div class="velocity-action-text" id="v-action-repeat">
-              💡 <b>Khách quen nuôi 84.4% shop:</b> Giữ chân tốt 410 khách quen này quan trọng gấp 5 lần tìm khách mới.
+            <div class="velocity-scale-row">
+              <span>0%</span>
+              <span class="scale-highlight-green">Cao hơn ngưỡng</span>
+              <span>100%</span>
             </div>
           </div>
+          <div class="velocity-action-text action-green" id="v-action-repeat">
+            💡 <b>Khách quen nuôi 84.4% shop:</b> Giữ chân tốt 410 khách quen này quan trọng gấp 5 lần tìm khách mới.
+          </div>
+        </div>
 
-          <!-- 2. Khách P1 Khẩn cấp -->
-          <div class="velocity-card" style="border-left: 3.5px solid var(--coral);">
+        <!-- 2. Khách P1 Khẩn cấp -->
+        <div class="velocity-card v-theme-red">
+          <div>
             <div class="velocity-card-head">
-              <span class="velocity-card-title">⚡ Khách P1 Khẩn cấp</span>
-              <span class="velocity-badge-status v-status-alert" id="v-status-p1">🔴 CẦN GỌI NGAY</span>
+              <span class="velocity-card-title">
+                <span style="font-size:13px; color:#f43f5e;">⚡</span>
+                <span>KHÁCH P1 KHẨN CẤP</span>
+              </span>
+              <span class="velocity-badge-status v-status-alert" id="v-status-p1">● CẦN GỌI NGAY</span>
             </div>
-            <div class="velocity-card-val"><span id="v-val-p1" style="color:var(--coral);">20 khách</span> <span class="sub-unit">(<span id="v-sub-p1-rev">48.2M</span> rủi ro)</span></div>
+            <div class="velocity-card-val-row">
+              <span class="velocity-card-val" id="v-val-p1" style="color:#f43f5e;">20 khách</span>
+            </div>
+            <div class="velocity-card-sub">(<span id="v-sub-p1-rev">48.2M</span> rủi ro)</div>
             <div class="velocity-target-line">
               <span>Ngưỡng cảnh báo:</span>
-              <b style="color:var(--coral);">≤ 25 khách</b>
+              <b style="color:#f43f5e;">≤ 25 khách</b>
             </div>
-            <div class="velocity-track">
-              <div class="velocity-fill" id="v-fill-p1" style="width: 80%; background: var(--coral);"></div>
+            <div class="velocity-track" style="background: rgba(244,63,94,0.15);">
+              <div class="velocity-fill" id="v-fill-p1" style="width: 80%; background: linear-gradient(90deg, #f43f5e, #fb7185);"></div>
             </div>
-            <div class="velocity-action-text" id="v-action-p1" style="border-left-color: var(--coral);">
+            <div class="velocity-scale-row">
+              <span class="scale-highlight-red" id="v-scale-p1-text">⚠️ Cần chăm sóc ngay</span>
+              <span>Max 25</span>
+            </div>
+          </div>
+          <div>
+            <div class="velocity-action-text action-red" id="v-action-p1">
               📞 <b>Hành động ngay:</b> 20 khách VIP đang trễ 1-17 ngày. Bốc máy gọi hoặc nhắn Zalo chốt đơn hôm nay!
             </div>
+            <button type="button" class="velocity-btn-action" id="btn-handle-p1">
+              <span>📞</span> Xem &amp; Xử Lý (<span id="v-btn-p1-count">20</span> khách)
+            </button>
           </div>
+        </div>
 
-          <!-- 3. Chu kỳ mua lặp trung bình -->
-          <div class="velocity-card" style="border-left: 3.5px solid var(--tide);">
+        <!-- 3. Chu kỳ Mua lặp -->
+        <div class="velocity-card v-theme-cyan">
+          <div>
             <div class="velocity-card-head">
-              <span class="velocity-card-title">⏱️ Chu kỳ Mua lặp</span>
-              <span class="velocity-badge-status v-status-good" id="v-status-cycle">🟢 ỔN ĐỊNH</span>
+              <span class="velocity-card-title">
+                <span style="font-size:13px; color:#38bdf8;">⏱️</span>
+                <span>CHU KỲ MUA LẶP</span>
+              </span>
+              <span class="velocity-badge-status" style="background: rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);" id="v-status-cycle">● ỔN ĐỊNH</span>
             </div>
-            <div class="velocity-card-val"><span id="v-val-cycle">13.8 ngày</span> <span class="sub-unit">(~2 tuần/lần)</span></div>
+            <div class="velocity-card-val-row">
+              <span class="velocity-card-val" id="v-val-cycle">13.8 ngày</span>
+            </div>
+            <div class="velocity-card-sub">(~2 tuần/lần)</div>
             <div class="velocity-target-line">
-              <span>Ngưỡng chuẩn tự nhiên:</span>
+              <span>Chuẩn tự nhiên:</span>
               <b style="color:var(--tide);">12 – 15 ngày</b>
             </div>
-            <div class="velocity-track">
-              <div class="velocity-fill" id="v-fill-cycle" style="width: 92%; background: var(--tide);"></div>
+            <div class="velocity-track" style="background: rgba(56,189,248,0.12);">
+              <div class="velocity-fill" id="v-fill-cycle" style="width: 92%; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
             </div>
-            <div class="velocity-action-text" id="v-action-cycle">
-              🎯 <b>Điểm rơi vàng:</b> Đến ngày thứ 14 khách chưa mua lại là thời điểm vàng để CSKH gửi menu mẻ mới.
+            <div class="velocity-scale-row">
+              <span>0d</span>
+              <span class="scale-highlight-cyan" id="v-scale-cycle-text">Chuẩn nhịp đều</span>
+              <span>30d</span>
             </div>
           </div>
+          <div class="velocity-action-text action-cyan" id="v-action-cycle">
+            🎯 <b>Điểm rơi vàng:</b> Đến ngày thứ 14 khách chưa mua lại là thời điểm vàng để CSKH gửi menu mẻ mới.
+          </div>
+        </div>
 
-          <!-- 4. Giá trị đơn AOV -->
-          <div class="velocity-card" style="border-left: 3.5px solid var(--sand);">
+        <!-- 4. Giá trị đơn (AOV) -->
+        <div class="velocity-card v-theme-amber">
+          <div>
             <div class="velocity-card-head">
-              <span class="velocity-card-title">💰 Giá trị Đơn (AOV)</span>
-              <span class="velocity-badge-status v-status-warn" id="v-status-aov">🟡 CẦN UPSELL</span>
+              <span class="velocity-card-title">
+                <span style="font-size:13px; color:#f59e0b;">💰</span>
+                <span>GIÁ TRỊ ĐƠN (AOV)</span>
+              </span>
+              <span class="velocity-badge-status v-status-warn" id="v-status-aov">● CẦN UPSELL</span>
             </div>
-            <div class="velocity-card-val"><span id="v-val-aov">192.8K</span> <span class="sub-unit">(Mục tiêu 210K)</span></div>
+            <div class="velocity-card-val-row">
+              <span class="velocity-card-val" id="v-val-aov">192.8K</span>
+              <span class="v-delta-badge delta-amber" id="v-badge-aov-pct">91.8%</span>
+            </div>
+            <div class="velocity-card-sub">(Mục tiêu 210K)</div>
             <div class="velocity-target-line">
               <span>Mục tiêu tối ưu:</span>
               <b style="color:var(--sand);">≥ 210.000đ</b>
             </div>
-            <div class="velocity-track">
-              <div class="velocity-fill" id="v-fill-aov" style="width: 91%; background: var(--sand);"></div>
+            <div class="velocity-track" style="background: rgba(245,158,11,0.12);">
+              <div class="velocity-fill" id="v-fill-aov" style="width: 91%; background: linear-gradient(90deg, #d97706, #fbbf24);"></div>
             </div>
-            <div class="velocity-action-text" id="v-action-aov" style="border-left-color: var(--sand);">
-              🍣 <b>Cần thêm +17.2K/đơn:</b> Nhân viên tư vấn gợi ý thêm món phụ, nước chấm, đồ ăn kèm để đạt mốc 210K.
+            <div class="velocity-scale-row">
+              <span id="v-scale-aov-left">Đạt 91.8%</span>
+              <span class="scale-highlight-amber" id="v-scale-aov-right">Thiếu ~17.2K</span>
             </div>
           </div>
+          <div class="velocity-action-text action-amber" id="v-action-aov">
+            🍣 <b>Cần thêm +17.2K/đơn:</b> Nhân viên tư vấn gợi ý thêm món phụ, nước chấm, đồ ăn kèm để đạt mốc 210K.
+          </div>
+        </div>
 
-          <!-- 5. Tỷ trọng Cuối tuần -->
-          <div class="velocity-card" style="border-left: 3.5px solid #a855f7;">
+        <!-- 5. Tỷ trọng Cuối tuần -->
+        <div class="velocity-card v-theme-purple">
+          <div>
             <div class="velocity-card-head">
-              <span class="velocity-card-title">🏖️ Tỷ trọng Cuối tuần</span>
-              <span class="velocity-badge-status v-status-good" id="v-status-weekend">🟢 CHUẨN NHỊP</span>
+              <span class="velocity-card-title">
+                <span style="font-size:13px; color:#c084fc;">📊</span>
+                <span>TỶ TRỌNG CUỐI TUẦN</span>
+              </span>
+              <span class="velocity-badge-status" style="background: rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.35);" id="v-status-weekend">● CHUẨN NHỊP</span>
             </div>
-            <div class="velocity-card-val"><span id="v-val-weekend">54.0%</span> <span class="sub-unit">(<span id="v-sub-wk-rev">216M</span> / 3 ngày)</span></div>
+            <div class="velocity-card-val-row">
+              <span class="velocity-card-val" id="v-val-weekend">54.0%</span>
+            </div>
+            <div class="velocity-card-sub">(<span id="v-sub-wk-rev">216M</span> / 3 ngày)</div>
             <div class="velocity-target-line">
-              <span>Khoảng chuẩn ngành:</span>
+              <span>Chuẩn ngành:</span>
               <b style="color:#c084fc;">50% – 60%</b>
             </div>
-            <div class="velocity-track">
-              <div class="velocity-fill" id="v-fill-weekend" style="width: 90%; background: #a855f7;"></div>
+            <div class="velocity-track" style="background: rgba(168,85,247,0.15);">
+              <div class="velocity-fill" id="v-fill-weekend" style="width: 90%; background: linear-gradient(90deg, #9333ea, #c084fc);"></div>
             </div>
-            <div class="velocity-action-text" id="v-action-weekend" style="border-left-color: #a855f7;">
-              ⚡ <b>Chuẩn bị hàng:</b> Nhập mẻ hải sản lớn nhất sáng T6, tập trung shipper ca 11h-12h và 17h-19h T6-CN.
+            <div class="velocity-scale-row">
+              <span id="v-scale-wk-left">T2-T5: 46.0%</span>
+              <span class="scale-highlight-purple">T6-CN Cân đối</span>
             </div>
+          </div>
+          <div class="velocity-action-text action-purple" id="v-action-weekend">
+            ⚡ <b>Chuẩn bị hàng:</b> Nhập mẻ hải sản lớn nhất sáng T6, tập trung shipper ca 11h-12h và 17h-19h T6-CN.
           </div>
         </div>
       </div>
@@ -4636,15 +4922,20 @@ function initCustomerCycleAnalysis() {
   document.getElementById('crm-stat-atrisk').textContent = `${totalAtRiskCount} khách`;
   document.getElementById('crm-stat-atrisk-rev').textContent = fmtK(totalAtRiskRev);
 
-  // ══════ UPDATE 5 SALES VELOCITY BENCHMARKS ══════
+  // ══════ UPDATE 5 SALES VELOCITY BENCHMARKS (MODERN RADAR) ══════
   const elValRepeat = document.getElementById('v-val-repeat');
   if (elValRepeat) elValRepeat.textContent = `${repeatRevPct}%`;
   const elSubRepeatRev = document.getElementById('v-sub-repeat-rev');
   if (elSubRepeatRev) elSubRepeatRev.textContent = fmtK(repeatTotalRev);
   const elSubTotalRev = document.getElementById('v-sub-total-rev');
   if (elSubTotalRev) elSubTotalRev.textContent = fmtK(totalShopRev);
+  const elDeltaRepeat = document.getElementById('v-delta-repeat');
+  if (elDeltaRepeat) {
+    const diff = (repeatRevPct - 75).toFixed(1);
+    elDeltaRepeat.textContent = diff >= 0 ? `+${diff}%` : `${diff}%`;
+  }
   const elFillRepeat = document.getElementById('v-fill-repeat');
-  if (elFillRepeat) elFillRepeat.style.width = `${Math.min(100, Math.max(15, (repeatRevPct / 90) * 100))}%`;
+  if (elFillRepeat) elFillRepeat.style.width = `${Math.min(100, Math.max(15, (repeatRevPct / 95) * 100))}%`;
 
   const elValP1 = document.getElementById('v-val-p1');
   if (elValP1) elValP1.textContent = `${p1Custs.length} khách`;
@@ -4652,16 +4943,34 @@ function initCustomerCycleAnalysis() {
   if (elSubP1Rev) elSubP1Rev.textContent = fmtK(p1Rev);
   const elFillP1 = document.getElementById('v-fill-p1');
   if (elFillP1) elFillP1.style.width = `${Math.min(100, Math.max(15, (p1Custs.length / 25) * 100))}%`;
+  const elBtnP1Count = document.getElementById('v-btn-p1-count');
+  if (elBtnP1Count) elBtnP1Count.textContent = p1Custs.length;
+  const elScaleP1Text = document.getElementById('v-scale-p1-text');
+  if (elScaleP1Text) {
+    elScaleP1Text.textContent = p1Custs.length > 25 ? `⚠️ Vượt giới hạn +${p1Custs.length - 25} khách` : `⚠️ Cần chăm sóc ngay`;
+  }
 
   const elValCycle = document.getElementById('v-val-cycle');
   if (elValCycle) elValCycle.textContent = `${avgCycle} ngày`;
   const elFillCycle = document.getElementById('v-fill-cycle');
   if (elFillCycle) elFillCycle.style.width = `${Math.min(100, Math.max(20, (13.8 / (avgCycle || 1)) * 90))}%`;
+  const elScaleCycleText = document.getElementById('v-scale-cycle-text');
+  if (elScaleCycleText) {
+    elScaleCycleText.textContent = avgCycle > 15 ? 'Hơi giãn chu kỳ' : 'Chuẩn nhịp đều';
+  }
 
   const elValAov = document.getElementById('v-val-aov');
   if (elValAov) elValAov.textContent = fmtK(aov);
+  const aovPct = Math.min(100, Math.round((aov / 210000) * 100));
+  const elBadgeAovPct = document.getElementById('v-badge-aov-pct');
+  if (elBadgeAovPct) elBadgeAovPct.textContent = `${aovPct}%`;
   const elFillAov = document.getElementById('v-fill-aov');
-  if (elFillAov) elFillAov.style.width = `${Math.min(100, Math.max(15, (aov / 210000) * 100))}%`;
+  if (elFillAov) elFillAov.style.width = `${aovPct}%`;
+  const elScaleAovLeft = document.getElementById('v-scale-aov-left');
+  if (elScaleAovLeft) elScaleAovLeft.textContent = `Đạt ${aovPct}%`;
+  const aovShortfall = Math.max(0, 210000 - aov);
+  const elScaleAovRight = document.getElementById('v-scale-aov-right');
+  if (elScaleAovRight) elScaleAovRight.textContent = aovShortfall > 0 ? `Thiếu ~${fmtK(aovShortfall)}` : 'Đạt chuẩn';
 
   const elValWeekend = document.getElementById('v-val-weekend');
   if (elValWeekend) elValWeekend.textContent = `${wkRevPct}%`;
@@ -4669,6 +4978,40 @@ function initCustomerCycleAnalysis() {
   if (elSubWkRev) elSubWkRev.textContent = fmtK(wkRev);
   const elFillWeekend = document.getElementById('v-fill-weekend');
   if (elFillWeekend) elFillWeekend.style.width = `${Math.min(100, Math.max(15, (wkRevPct / 65) * 100))}%`;
+  const elScaleWkLeft = document.getElementById('v-scale-wk-left');
+  if (elScaleWkLeft) elScaleWkLeft.textContent = `T2-T5: ${(100 - wkRevPct).toFixed(1)}%`;
+
+  // ══════ UPDATE TOP STATUS PULSE BAR ══════
+  const elTopHealth = document.getElementById('top-status-health');
+  if (elTopHealth) elTopHealth.textContent = p1Custs.length > 25 ? 'Cảnh báo quá tải' : 'Ổn định';
+  const elTopP1 = document.getElementById('top-status-p1');
+  if (elTopP1) elTopP1.textContent = p1Custs.length > 0 ? `${p1Custs.length} khách khẩn cấp` : 'Không có';
+  const elTopUpsell = document.getElementById('top-status-upsell');
+  if (elTopUpsell) elTopUpsell.textContent = aovShortfall > 0 ? `+${fmtK(aovShortfall)} / đơn` : 'Đạt mốc 210K';
+  const elTopRepeat = document.getElementById('top-status-repeat');
+  if (elTopRepeat) elTopRepeat.textContent = `${repeatRevPct}% shop`;
+
+  // Bind P1 Action Buttons
+  const btnHandleP1 = document.getElementById('btn-handle-p1');
+  if (btnHandleP1 && !btnHandleP1._hasListener) {
+    btnHandleP1._hasListener = true;
+    btnHandleP1.addEventListener('click', () => {
+      const chipP1 = document.getElementById('chip-count-p1');
+      if (chipP1 && chipP1.parentElement) chipP1.parentElement.click();
+      const target = document.getElementById('crm-customers-tbody') || document.querySelector('#view-crm .table-scroll');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+  const topBtnP1 = document.getElementById('top-btn-p1');
+  if (topBtnP1 && !topBtnP1._hasListener) {
+    topBtnP1._hasListener = true;
+    topBtnP1.addEventListener('click', () => {
+      const chipP1 = document.getElementById('chip-count-p1');
+      if (chipP1 && chipP1.parentElement) chipP1.parentElement.click();
+      const target = document.getElementById('crm-customers-tbody') || document.querySelector('#view-crm .table-scroll');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
   // Chips
   const chipP1 = document.getElementById('chip-count-p1');
