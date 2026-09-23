@@ -381,6 +381,114 @@ nav.tabs::-webkit-scrollbar { display: none; }
 }
 
 /* ════════════════════════════════════════════════════════════
+   CRM REPURCHASE CYCLE & AT-RISK CUSTOMER STYLES
+   ════════════════════════════════════════════════════════════ */
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.badge-high-risk {
+  background: rgba(251, 113, 133, 0.15);
+  color: var(--coral);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+}
+.badge-mild-risk {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--sand);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.badge-healthy {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--kelp);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.badge-dormant {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--mist);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.btn-action-zalo {
+  background: #0068ff;
+  color: #fff !important;
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform .12s, opacity .12s;
+}
+.btn-action-zalo:hover { transform: translateY(-1px); opacity: .9; }
+
+.btn-action-call {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--kelp) !important;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-action-call:hover { background: rgba(52, 211, 153, 0.25); }
+
+.btn-action-msg {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--foam);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .12s;
+}
+.btn-action-msg:hover { background: var(--tide-dim); border-color: var(--tide); color: var(--tide); }
+
+.crm-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px); z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.crm-modal-backdrop.open { display: flex; animation: fadeIn .2s ease; }
+.crm-modal-box {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); width: 100%; max-width: 480px;
+  padding: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+  position: relative;
+}
+.crm-modal-head {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+.crm-modal-title { font-size: 15px; font-weight: 700; color: var(--foam); }
+.crm-modal-close {
+  background: none; border: none; font-size: 20px; color: var(--dim); cursor: pointer;
+}
+.crm-modal-close:hover { color: var(--foam); }
+.crm-msg-textarea {
+  width: 100%; height: 110px; background: var(--depth);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  color: var(--foam); padding: 10px; font-family: var(--font-display);
+  font-size: 13px; line-height: 1.5; resize: none; margin: 12px 0; outline: none;
+}
+.crm-msg-textarea:focus { border-color: var(--tide); }
+.crm-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ════════════════════════════════════════════════════════════
    PEAK HOURS HEATMAP (24x7)
    ════════════════════════════════════════════════════════════ */
 .hm-summary-bar {
@@ -873,7 +981,7 @@ select:focus { border-color: var(--tide); }
   header, nav.tabs, .date-filter-bar, .filter-bar, .print-btn, .btn-excel, .drawer, .drawer-backdrop { display: none !important; }
   body { background: white; color: black; }
   .view { display: block !important; }
-  #view-orders, #view-batches, #view-deleted, #view-history, #view-overview { display: none !important; }
+  #view-orders, #view-batches, #view-crm, #view-deleted, #view-history, #view-overview { display: none !important; }
   #view-report { display: block !important; }
 }
 
@@ -1115,6 +1223,7 @@ select:focus { border-color: var(--tide); }
     <button class="tab-btn active" data-view="overview">📊 Tổng quan</button>
     <button class="tab-btn" data-view="orders">📦 Đơn hàng <span class="tab-badge" id="badge-orders">0</span></button>
     <button class="tab-btn" data-view="batches">🧺 Lô hàng <span class="tab-badge" id="badge-batches">0</span></button>
+    <button class="tab-btn" data-view="crm">🔄 Chu kỳ &amp; Khách trễ <span class="tab-badge alert" id="badge-crm">0</span></button>
     <button class="tab-btn" data-view="deleted">🗑️ Đã xoá mềm <span class="tab-badge alert" id="badge-deleted">0</span></button>
     <button class="tab-btn" data-view="history">🕒 Lịch sử thay đổi <span class="tab-badge" id="badge-history">0</span></button>
     <button class="tab-btn" data-view="report">📄 Báo cáo</button>
@@ -1329,6 +1438,18 @@ select:focus { border-color: var(--tide); }
       </div>
     </div>
 
+    <!-- Banner cảnh báo khách trễ hẹn & chuyển nhanh sang CRM -->
+    <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(251,113,133,0.12), rgba(251,191,36,0.1)); border:1px solid rgba(251,113,133,0.3); border-radius:var(--radius); padding:12px 18px; margin: 12px 0 16px; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:24px;">🚨</span>
+        <div>
+          <div style="color:var(--coral); font-size:13.5px; font-weight:700;">Phát hiện <span id="overview-at-risk-count">0</span> khách quen đang trễ chu kỳ mua hàng!</div>
+          <div style="font-size:12px; color:var(--mist); margin-top:2px;">Chu kỳ mua trung bình là 12 ngày. Các khách này đã quá hạn và có nguy cơ thất thoát doanh thu nếu không được chăm sóc sớm.</div>
+        </div>
+      </div>
+      <button class="btn-excel" id="btn-goto-crm" style="background:linear-gradient(145deg, #f43f5e, #e11d48); white-space:nowrap; cursor:pointer;">Xem danh sách &amp; Chăm sóc ngay →</button>
+    </div>
+
     <p class="eyebrow">Phân tích</p>
     <div class="grid-2">
       <div class="panel">
@@ -1393,6 +1514,114 @@ select:focus { border-color: var(--tide); }
         <div class="icon">🧺</div><div class="msg">Không tìm thấy lô hàng phù hợp</div>
       </div>
       <div id="batches-count" style="padding:12px 18px; font-size:11.5px; color:var(--dim); border-top:1px solid var(--line)"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ CRM & REPURCHASE CYCLE CONTROL ═══════════════ -->
+  <section class="view" id="view-crm">
+    <div class="report-hero" style="background: linear-gradient(160deg, rgba(251,146,60,.12), transparent 60%); border-color: rgba(251,146,60,.3);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="display:flex; align-items:center; gap:10px;">
+            <span>🔄</span> Kiểm Soát Chu Kỳ Mua &amp; Giữ Chân Khách Quen
+          </h2>
+          <p>Phân tích vòng lặp đặt hàng của 319 khách quen · Báo động khách trễ hẹn để chủ động nhắn Zalo / gọi điện chốt đơn</p>
+        </div>
+        <button class="btn-excel" id="crm-export-excel-btn">📥 Xuất Excel Danh sách CSKH</button>
+      </div>
+
+      <div class="report-grid" style="margin-top:20px;">
+        <div class="report-stat">
+          <div class="v" id="crm-stat-cycle" style="color:var(--tide)">—</div>
+          <div class="l">Chu kỳ mua trung bình</div>
+        </div>
+        <div class="report-stat">
+          <div class="v" id="crm-stat-median" style="color:var(--current)">—</div>
+          <div class="l">Trung vị chu kỳ (Phổ biến)</div>
+        </div>
+        <div class="report-stat">
+          <div class="v" id="crm-stat-atrisk" style="color:var(--coral)">—</div>
+          <div class="l">Khách quen trễ hẹn (Cần gọi)</div>
+        </div>
+        <div class="report-stat">
+          <div class="v" id="crm-stat-atrisk-rev" style="color:var(--sand)">—</div>
+          <div class="l">Doanh thu có nguy cơ mất</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Biểu đồ: Vòng lặp mua hàng & Sức khỏe khách quen -->
+    <div class="grid-2b" style="margin-bottom:16px;">
+      <!-- Biểu đồ 1: Phân bổ khoảng thời gian vòng lặp mua hàng -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Khoảng thời gian Vòng lặp Mua hàng
+            <span class="sub">Bao lâu thì khách quen đặt lại một lần?</span>
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="chart-box"><canvas id="chartCycleDistribution"></canvas></div>
+          <div style="margin-top:10px; font-size:11.5px; color:var(--mist); line-height:1.5;">
+            💡 <b>72% khách quen</b> quay lại đặt trong vòng <b>14 ngày</b> (50.6% đặt lại chỉ trong 7 ngày). Quá 20 ngày chưa mua lại là dấu hiệu sắp mất khách.
+          </div>
+        </div>
+      </div>
+
+      <!-- Biểu đồ 2: Sức khỏe Khách quen & Mức độ Nguy cơ -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Phân loại Sức khỏe Khách quen
+            <span class="sub">Mức độ trễ hẹn so với chu kỳ thường mua</span>
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="chart-box" style="height: 185px;"><canvas id="chartCustomerHealth"></canvas></div>
+          <div id="crm-health-legend" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BẢNG DANH SÁCH KIỂM SOÁT & CHĂM SÓC KHÁCH QUEN -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Danh sách Khách quen Cần Kiểm soát &amp; Chăm sóc
+          <span class="sub" id="crm-table-count">Đang hiển thị 0 khách</span>
+        </span>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="crm-search" placeholder="Tìm tên khách, số điện thoại, món ưa thích...">
+        </div>
+        <div class="chip-group" id="crm-health-chips">
+          <button class="chip active" data-health="HIGH_RISK">🔴 Nguy cơ mất cao (<span id="chip-count-high">0</span>)</button>
+          <button class="chip" data-health="MILD_RISK">🟡 Trễ hẹn nhẹ (<span id="chip-count-mild">0</span>)</button>
+          <button class="chip" data-health="VIP_AT_RISK">👑 Khách VIP trễ (<span id="chip-count-vip">0</span>)</button>
+          <button class="chip" data-health="HEALTHY">🟢 Đang mua đều (<span id="chip-count-healthy">0</span>)</button>
+          <button class="chip" data-health="DORMANT">⚪ Ngủ đông >60 ngày (<span id="chip-count-dormant">0</span>)</button>
+          <button class="chip" data-health="">Tất cả khách quen (<span id="chip-count-all">0</span>)</button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-crmsort="name">Khách hàng</th>
+              <th class="sortable text-right" data-crmsort="count">Số đơn</th>
+              <th class="sortable text-right" data-crmsort="totalRev">Tổng chi tiêu</th>
+              <th class="sortable text-center" data-crmsort="avgInterval">Chu kỳ thường mua</th>
+              <th class="sortable text-center" data-crmsort="daysSinceLast">Chưa mua lại</th>
+              <th class="sortable text-center" data-crmsort="overdue">Độ trễ</th>
+              <th>Món khoái khẩu</th>
+              <th class="text-right">Hành động chốt đơn</th>
+            </tr>
+          </thead>
+          <tbody id="crm-tbody"></tbody>
+        </table>
+      </div>
+      <div id="crm-empty" class="empty-state hidden">
+        <div class="icon">🎉</div><div class="msg">Không có khách hàng nào trong nhóm này</div>
+      </div>
     </div>
   </section>
 
@@ -1577,6 +1806,22 @@ select:focus { border-color: var(--tide); }
     <button class="drawer-close" id="drawer-close">✕</button>
   </div>
   <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- Modal Mẫu Tin Nhắn Chăm Sóc Zalo -->
+<div class="crm-modal-backdrop" id="crm-msg-modal">
+  <div class="crm-modal-box">
+    <div class="crm-modal-head">
+      <div class="crm-modal-title">💬 Mẫu Tin Nhắn Chăm Sóc Khách Quen</div>
+      <button class="crm-modal-close" id="crm-modal-close-btn">&times;</button>
+    </div>
+    <div id="crm-modal-customer-info" style="font-size:12px; color:var(--mist); margin-bottom:8px; line-height:1.5;"></div>
+    <textarea class="crm-msg-textarea" id="crm-msg-text"></textarea>
+    <div class="crm-modal-actions">
+      <button class="btn-apply-date" id="crm-copy-msg-btn">📋 Sao chép tin nhắn</button>
+      <a class="btn-excel" id="crm-open-zalo-btn" target="_blank" style="background:#0068ff;">💬 Mở Zalo nhắn ngay</a>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -3375,8 +3620,449 @@ document.getElementById('btn-apply-custom-date').addEventListener('click', () =>
   applyDateFilter('custom', from, to);
 });
 
+// Excel Export for CRM list
+function exportCustomerCycleExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Thư viện Excel đang được tải, vui lòng thử lại sau 2 giây.');
+    return;
+  }
+  const rows = [
+    ['Tên khách hàng', 'Số điện thoại', 'Hạng VIP', 'Số đơn đã mua', 'Tổng chi tiêu (VNĐ)', 'Chu kỳ thường mua (ngày)', 'Lần mua gần nhất', 'Số ngày chưa mua', 'Độ trễ (ngày)', 'Trạng thái sức khỏe', 'Món ưa thích nhất']
+  ];
+
+  crmCustomers.forEach(c => {
+    let healthLabel = 'Đang mua đều';
+    if (c.health === 'HIGH_RISK') healthLabel = 'Nguy cơ mất cao';
+    else if (c.health === 'MILD_RISK') healthLabel = 'Trễ hẹn nhẹ';
+    else if (c.health === 'DORMANT') healthLabel = 'Ngủ đông';
+
+    rows.push([
+      c.name,
+      c.phone || '',
+      c.isVip ? 'VIP' : 'Thường',
+      c.count,
+      c.totalRev,
+      c.avgInterval,
+      c.lastDate,
+      c.daysSinceLast,
+      c.overdue,
+      healthLabel,
+      c.topProd
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'KhachQuenTreHen');
+  XLSX.writeFile(wb, `EcoGo_CSKH_KhachTreHen_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+/* ════════════════ CRM & REPURCHASE CYCLE ENGINE ════════════════ */
+let chartCycleDistributionInstance = null;
+let chartCustomerHealthInstance = null;
+let crmCustomers = [];
+let crmFilterState = { q: '', health: 'HIGH_RISK', sortKey: 'totalRev', sortDir: 'desc' };
+
+function initCustomerCycleAnalysis() {
+  const activeAll = D.orders.filter(o => !o.deleted && o.status !== 'CANCELLED');
+  const custMap = {};
+  let maxOrderTs = 0;
+
+  for (const o of activeAll) {
+    const name = (o.customerName || 'Không rõ').trim();
+    const phone = (o.customerPhone || '').trim();
+    const cid = (phone || name).toLowerCase();
+    const ts = getOrderTs(o);
+    if (ts > maxOrderTs) maxOrderTs = ts;
+
+    if (!custMap[cid]) {
+      custMap[cid] = {
+        name,
+        phone,
+        orders: [],
+        totalRev: 0,
+        favProducts: {}
+      };
+    }
+    custMap[cid].orders.push(ts);
+    custMap[cid].totalRev += (o.totalPrice || 0);
+
+    for (const it of o.items || []) {
+      const pName = (it.name || 'Khác').trim();
+      custMap[cid].favProducts[pName] = (custMap[cid].favProducts[pName] || 0) + (it.qty || 1);
+    }
+  }
+
+  const repeatList = [];
+  const intervalsAll = [];
+
+  for (const cid of Object.keys(custMap)) {
+    const c = custMap[cid];
+    const tsList = c.orders.sort((a, b) => a - b);
+    const count = tsList.length;
+    if (count < 2) continue;
+
+    const intervals = [];
+    for (let i = 1; i < count; i++) {
+      const diffDays = Math.round(((tsList[i] - tsList[i - 1]) / 86400000) * 10) / 10;
+      if (diffDays > 0) {
+        intervals.push(diffDays);
+        intervalsAll.push(diffDays);
+      }
+    }
+
+    const avgInterval = intervals.length
+      ? Math.round((intervals.reduce((a, b) => a + b, 0) / intervals.length) * 10) / 10
+      : 0;
+
+    const lastTs = tsList[tsList.length - 1];
+    const daysSinceLast = Math.round(((maxOrderTs - lastTs) / 86400000) * 10) / 10;
+    const overdue = Math.round((daysSinceLast - avgInterval) * 10) / 10;
+
+    let healthStatus = 'HEALTHY';
+    if (daysSinceLast > 60) {
+      healthStatus = 'DORMANT';
+    } else if (overdue > 14 || daysSinceLast >= 25) {
+      healthStatus = 'HIGH_RISK';
+    } else if (overdue > 4) {
+      healthStatus = 'MILD_RISK';
+    } else {
+      healthStatus = 'HEALTHY';
+    }
+
+    let topProd = '—';
+    let topQty = 0;
+    for (const p of Object.keys(c.favProducts)) {
+      if (c.favProducts[p] > topQty) {
+        topQty = c.favProducts[p];
+        topProd = p;
+      }
+    }
+
+    const isVip = count >= 6 || c.totalRev >= 2000000;
+
+    repeatList.push({
+      cid,
+      name: c.name,
+      phone: c.phone,
+      count,
+      totalRev: c.totalRev,
+      avgInterval,
+      lastTs,
+      lastDate: fmtDate(lastTs),
+      daysSinceLast,
+      overdue,
+      health: healthStatus,
+      isVip,
+      topProd
+    });
+  }
+
+  crmCustomers = repeatList;
+
+  const avgCycle = intervalsAll.length
+    ? (intervalsAll.reduce((a, b) => a + b, 0) / intervalsAll.length).toFixed(1)
+    : 0;
+
+  const sortedInts = intervalsAll.slice().sort((a, b) => a - b);
+  const medianCycle = sortedInts.length ? sortedInts[Math.floor(sortedInts.length / 2)] : 0;
+
+  const highRiskCusts = crmCustomers.filter(c => c.health === 'HIGH_RISK');
+  const mildRiskCusts = crmCustomers.filter(c => c.health === 'MILD_RISK');
+  const vipAtRiskCusts = crmCustomers.filter(c => c.isVip && (c.health === 'HIGH_RISK' || c.health === 'MILD_RISK'));
+  const healthyCusts = crmCustomers.filter(c => c.health === 'HEALTHY');
+  const dormantCusts = crmCustomers.filter(c => c.health === 'DORMANT');
+
+  const totalAtRiskCount = highRiskCusts.length + mildRiskCusts.length;
+  const totalAtRiskRev = highRiskCusts.concat(mildRiskCusts).reduce((s, c) => s + c.totalRev, 0);
+
+  const badgeCrm = document.getElementById('badge-crm');
+  if (badgeCrm) badgeCrm.textContent = totalAtRiskCount;
+  const overviewRiskCount = document.getElementById('overview-at-risk-count');
+  if (overviewRiskCount) overviewRiskCount.textContent = totalAtRiskCount;
+
+  document.getElementById('crm-stat-cycle').textContent = `${avgCycle} ngày`;
+  document.getElementById('crm-stat-median').textContent = `${medianCycle} ngày`;
+  document.getElementById('crm-stat-atrisk').textContent = `${totalAtRiskCount} khách`;
+  document.getElementById('crm-stat-atrisk-rev').textContent = fmtK(totalAtRiskRev);
+
+  document.getElementById('chip-count-high').textContent = highRiskCusts.length;
+  document.getElementById('chip-count-mild').textContent = mildRiskCusts.length;
+  document.getElementById('chip-count-vip').textContent = vipAtRiskCusts.length;
+  document.getElementById('chip-count-healthy').textContent = healthyCusts.length;
+  document.getElementById('chip-count-dormant').textContent = dormantCusts.length;
+  document.getElementById('chip-count-all').textContent = crmCustomers.length;
+
+  renderCrmCharts(intervalsAll, healthyCusts.length, mildRiskCusts.length, highRiskCusts.length, dormantCusts.length);
+  renderCrmTable();
+}
+
+function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
+  const intUnder7 = intervalsAll.filter(x => x <= 7).length;
+  const int8to14 = intervalsAll.filter(x => x > 7 && x <= 14).length;
+  const int15to30 = intervalsAll.filter(x => x > 14 && x <= 30).length;
+  const int31to60 = intervalsAll.filter(x => x > 30 && x <= 60).length;
+  const intOver60 = intervalsAll.filter(x => x > 60).length;
+  const totalInts = intervalsAll.length || 1;
+
+  if (chartCycleDistributionInstance) chartCycleDistributionInstance.destroy();
+  chartCycleDistributionInstance = new Chart(document.getElementById('chartCycleDistribution'), {
+    type: 'bar',
+    data: {
+      labels: ['≤ 7 ngày', '8 - 14 ngày', '15 - 30 ngày', '31 - 60 ngày', '> 60 ngày'],
+      datasets: [{
+        label: 'Số lần mua lại',
+        data: [intUnder7, int8to14, int15to30, int31to60, intOver60],
+        backgroundColor: ['#2dd4bf', '#38bdf8', '#fbbf24', '#fb923c', '#94a3b8'],
+        borderRadius: 4,
+        maxBarThickness: 36
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const pct = ((c.raw / totalInts) * 100).toFixed(1);
+              return `${c.raw.toLocaleString('vi-VN')} lần (${pct}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10.5 } } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  const healthData = [nHealthy, nMild, nHigh, nDormant];
+  const totalHealth = healthData.reduce((a, b) => a + b, 0) || 1;
+
+  if (chartCustomerHealthInstance) chartCustomerHealthInstance.destroy();
+  chartCustomerHealthInstance = new Chart(document.getElementById('chartCustomerHealth'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Đang mua đều', 'Trễ hẹn nhẹ (4-14d)', 'Nguy cơ mất (>14d)', 'Ngủ đông (>60d)'],
+      datasets: [{
+        data: healthData,
+        backgroundColor: ['#34d399', '#fbbf24', '#fb7185', '#94a3b8'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const pct = ((c.raw / totalHealth) * 100).toFixed(1);
+              return `${c.label}: ${c.raw} khách (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const healthRows = [
+    { label: '🟢 Đang mua đều đặn', count: nHealthy, color: '#34d399' },
+    { label: '🟡 Trễ hẹn nhẹ (4-14 ngày)', count: nMild, color: '#fbbf24' },
+    { label: '🔴 Nguy cơ mất cao (>14 ngày)', count: nHigh, color: '#fb7185' },
+    { label: '⚪ Ngủ đông (>60 ngày)', count: nDormant, color: '#94a3b8' },
+  ];
+  document.getElementById('crm-health-legend').innerHTML = healthRows.map(h => `
+    <div class="cohort-legend-row">
+      <div class="cohort-legend-left">
+        <span class="cohort-dot" style="background:${h.color}"></span>
+        <span class="cohort-legend-name" style="font-size:11.5px">${h.label}</span>
+      </div>
+      <div class="cohort-legend-right">
+        <span class="cohort-val">${h.count} khách</span>
+        <span class="cohort-pct">${((h.count/totalHealth)*100).toFixed(1)}%</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCrmTable() {
+  let list = crmCustomers.slice();
+
+  const q = (crmFilterState.q || '').trim().toLowerCase();
+  if (q) {
+    list = list.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      c.phone.includes(q) || 
+      c.topProd.toLowerCase().includes(q)
+    );
+  }
+
+  const hf = crmFilterState.health;
+  if (hf === 'VIP_AT_RISK') {
+    list = list.filter(c => c.isVip && (c.health === 'HIGH_RISK' || c.health === 'MILD_RISK'));
+  } else if (hf) {
+    list = list.filter(c => c.health === hf);
+  }
+
+  const key = crmFilterState.sortKey;
+  const dir = crmFilterState.sortDir === 'asc' ? 1 : -1;
+  list.sort((a, b) => {
+    let av = a[key];
+    let bv = b[key];
+    if (typeof av === 'string') return dir * av.localeCompare(bv, 'vi');
+    return dir * ((av || 0) - (bv || 0));
+  });
+
+  document.getElementById('crm-table-count').textContent = `Đang hiển thị ${list.length.toLocaleString('vi-VN')} / ${crmCustomers.length.toLocaleString('vi-VN')} khách quen`;
+  document.getElementById('crm-empty').classList.toggle('hidden', list.length > 0);
+
+  const tbody = document.getElementById('crm-tbody');
+  tbody.innerHTML = list.map(c => {
+    let badgeHtml = '';
+    if (c.health === 'HIGH_RISK') {
+      badgeHtml = `<span class="health-badge badge-high-risk">🔴 Trễ ${c.overdue > 0 ? c.overdue.toFixed(1) + 'd' : 'lâu'}</span>`;
+    } else if (c.health === 'MILD_RISK') {
+      badgeHtml = `<span class="health-badge badge-mild-risk">🟡 Trễ ${c.overdue.toFixed(1)}d</span>`;
+    } else if (c.health === 'HEALTHY') {
+      badgeHtml = `<span class="health-badge badge-healthy">🟢 Đúng hẹn</span>`;
+    } else {
+      badgeHtml = `<span class="health-badge badge-dormant">⚪ Ngủ đông</span>`;
+    }
+
+    const vipBadge = c.isVip ? '<span class="sev-badge sev-high" style="margin-left:6px; font-size:9.5px; padding:1px 5px;">VIP</span>' : '';
+    const phoneDisplay = c.phone ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--mist); display:block;">📱 ${esc(c.phone)}</span>` : '';
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:600; font-size:13px; color:var(--foam); display:flex; align-items:center;">
+            ${esc(c.name)} ${vipBadge}
+          </div>
+          ${phoneDisplay}
+        </td>
+        <td class="text-right text-mono">${c.count} đơn</td>
+        <td class="text-right money" style="font-weight:700;">${fmt(c.totalRev)}</td>
+        <td class="text-center text-mono" style="color:var(--tide); font-weight:600;">~${c.avgInterval} ngày</td>
+        <td class="text-center text-dim" style="font-size:12px;">
+          <span style="font-family:var(--font-mono); font-weight:600; color:var(--foam);">${Math.floor(c.daysSinceLast)} ngày trước</span>
+          <span style="display:block; font-size:10.5px; color:var(--dim);">${c.lastDate}</span>
+        </td>
+        <td class="text-center">${badgeHtml}</td>
+        <td style="max-width:140px; font-size:12px;" class="ellipsis" title="${esc(c.topProd)}">
+          🍣 ${esc(c.topProd)}
+        </td>
+        <td class="text-right" style="white-space:nowrap;">
+          ${c.phone ? `<a href="https://zalo.me/${c.phone}" target="_blank" class="btn-action-zalo" title="Mở Zalo nhắn tin">💬 Zalo</a>` : ''}
+          ${c.phone ? `<a href="tel:${c.phone}" class="btn-action-call" title="Gọi điện">📞</a>` : ''}
+          <button class="btn-action-msg" data-cid="${esc(c.cid)}" title="Mở mẫu tin nhắn chăm sóc">📋 Mẫu tin</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('.btn-action-msg').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cid = btn.dataset.cid;
+      const cust = crmCustomers.find(x => x.cid === cid);
+      if (cust) openCrmMessageModal(cust);
+    });
+  });
+}
+
+function openCrmMessageModal(c) {
+  const modal = document.getElementById('crm-msg-modal');
+  const info = document.getElementById('crm-modal-customer-info');
+  const txt = document.getElementById('crm-msg-text');
+  const zaloBtn = document.getElementById('crm-open-zalo-btn');
+
+  info.innerHTML = `
+    Khách hàng: <b>${esc(c.name)}</b> ${c.phone ? `· SĐT: <b>${esc(c.phone)}</b>` : ''} · Đã mua <b>${c.count} đơn</b> (${fmt(c.totalRev)}) · Đã <b>${Math.floor(c.daysSinceLast)} ngày</b> chưa đặt lại · Món thích: <b>${esc(c.topProd)}</b>
+  `;
+
+  const sampleMsg = `Dạ em chào anh/chị ${c.name}, đợt này bên em vừa về mẻ ${c.topProd !== '—' ? c.topProd : 'hải sản'} tươi ngon xuất sắc lắm ạ! Em nhớ anh/chị thích món này nên nhắn riêng để giữ phần tươi ngon nhất cho mình. Hôm nay anh/chị có muốn lên đơn thưởng thức không em gửi liền ạ?`;
+
+  txt.value = sampleMsg;
+
+  if (c.phone) {
+    zaloBtn.href = `https://zalo.me/${c.phone}`;
+    zaloBtn.style.display = 'inline-flex';
+  } else {
+    zaloBtn.style.display = 'none';
+  }
+
+  modal.classList.add('open');
+}
+
+// Modal event listeners
+document.getElementById('crm-modal-close-btn').addEventListener('click', () => {
+  document.getElementById('crm-msg-modal').classList.remove('open');
+});
+document.getElementById('crm-msg-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'crm-msg-modal') document.getElementById('crm-msg-modal').classList.remove('open');
+});
+document.getElementById('crm-copy-msg-btn').addEventListener('click', () => {
+  const txt = document.getElementById('crm-msg-text').value;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('crm-copy-msg-btn');
+    const oldText = btn.textContent;
+    btn.textContent = '✅ Đã sao chép!';
+    btn.style.borderColor = 'var(--kelp)';
+    btn.style.color = 'var(--kelp)';
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2000);
+  });
+});
+
+document.getElementById('crm-export-excel-btn').addEventListener('click', exportCustomerCycleExcel);
+
+document.querySelectorAll('#crm-health-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#crm-health-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    crmFilterState.health = chip.dataset.health;
+    renderCrmTable();
+  });
+});
+
+document.getElementById('crm-search').addEventListener('input', (e) => {
+  crmFilterState.q = e.target.value;
+  renderCrmTable();
+});
+
+document.querySelectorAll('#view-crm thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.crmsort;
+    if (crmFilterState.sortKey === key) {
+      crmFilterState.sortDir = crmFilterState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      crmFilterState.sortKey = key;
+      crmFilterState.sortDir = (key === 'name' || key === 'topProd') ? 'asc' : 'desc';
+    }
+    document.querySelectorAll('#view-crm thead th.sortable').forEach(h => {
+      h.classList.remove('sort-active', 'sort-asc', 'sort-desc');
+    });
+    th.classList.add('sort-active', crmFilterState.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    renderCrmTable();
+  });
+});
+
+const btnGotoCrm = document.getElementById('btn-goto-crm');
+if (btnGotoCrm) {
+  btnGotoCrm.addEventListener('click', () => {
+    switchView('crm');
+  });
+}
+
 // Initialize dashboard with full dataset
 applyDateFilter('all');
+initCustomerCycleAnalysis();
 </script>
 </body>
 </html>
