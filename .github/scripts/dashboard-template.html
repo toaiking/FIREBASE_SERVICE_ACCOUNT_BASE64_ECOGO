@@ -711,6 +711,120 @@ nav.tabs::-webkit-scrollbar { display: none; }
 }
 
 /* ════════════════════════════════════════════════════════════
+   SALES VELOCITY & HEALTH BENCHMARKS (MỐC ĐO CHUYỂN ĐỘNG)
+   ════════════════════════════════════════════════════════════ */
+.velocity-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.velocity-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 13px 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.velocity-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--tide);
+}
+.velocity-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.velocity-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mist);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.velocity-badge-status {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.v-status-good {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--kelp);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.v-status-warn {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--sand);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.v-status-alert {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.2);
+}
+.velocity-card-val {
+  font-size: 19px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--foam);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.velocity-card-val .sub-unit {
+  font-size: 11px;
+  color: var(--mist);
+  font-weight: 500;
+}
+.velocity-target-line {
+  font-size: 10.5px;
+  color: var(--dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.velocity-track {
+  width: 100%;
+  height: 5px;
+  background: var(--depth);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1px solid var(--line-soft);
+}
+.velocity-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+.velocity-action-text {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--mist);
+  background: var(--depth);
+  padding: 6px 8px;
+  border-radius: 6px;
+  border-left: 2.5px solid var(--tide);
+}
+.velocity-action-text b {
+  color: var(--foam);
+}
+
+/* ════════════════════════════════════════════════════════════
    PEAK HOURS HEATMAP (24x7)
    ════════════════════════════════════════════════════════════ */
 .hm-summary-bar {
@@ -1223,6 +1337,7 @@ select:focus { border-color: var(--tide); }
   .weekend-summary-bar { grid-template-columns: repeat(4, 1fr); }
   .hm-summary-bar { grid-template-columns: repeat(4, 1fr); }
   .retention-summary-bar { grid-template-columns: repeat(4, 1fr); }
+  .velocity-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* Tablet Portrait (641px - 980px) */
@@ -1236,6 +1351,7 @@ select:focus { border-color: var(--tide); }
   .weekend-summary-bar { grid-template-columns: repeat(2, 1fr); }
   .hm-summary-bar { grid-template-columns: repeat(2, 1fr); }
   .retention-summary-bar { grid-template-columns: repeat(2, 1fr); }
+  .velocity-grid { grid-template-columns: repeat(2, 1fr); }
   .grid-2, .grid-2b { grid-template-columns: 1fr; }
   .report-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1407,6 +1523,7 @@ select:focus { border-color: var(--tide); }
   .chip-group::-webkit-scrollbar { display: none; }
   .hist-row { grid-template-columns: 1fr; gap: 4px; }
   .report-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .velocity-grid { grid-template-columns: 1fr; gap: 8px; }
   .report-hero { padding: 16px; }
   .report-hero h2 { font-size: 18px; }
 
@@ -2032,7 +2149,7 @@ select:focus { border-color: var(--tide); }
           <h2 style="display:flex; align-items:center; gap:10px;">
             <span>🔄</span> Kiểm Soát Chu Kỳ Mua &amp; Giữ Chân Khách Quen
           </h2>
-          <p>Phân tích vòng lặp đặt hàng của 319 khách quen · Báo động khách trễ hẹn để chủ động nhắn Zalo / gọi điện chốt đơn</p>
+          <p>Phân tích vòng lặp đặt hàng của <b id="crm-hero-cust-count">410</b> khách quen · Báo động khách trễ hẹn để chủ động nhắn Zalo / gọi điện chốt đơn</p>
         </div>
         <button class="btn-excel" id="crm-export-excel-btn">📥 Xuất Excel Danh sách CSKH</button>
       </div>
@@ -2057,19 +2174,128 @@ select:focus { border-color: var(--tide); }
       </div>
     </div>
 
+    <!-- ═══════════════ BẢNG MỐC ĐO CHUYỂN ĐỘNG BÁN HÀNG ═══════════════ -->
+    <div class="panel" style="margin-bottom:16px; border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.02);">
+      <div class="panel-head" style="background: rgba(56, 189, 248, 0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span class="panel-title" style="display:flex; align-items:center; gap:8px;">
+          <span>🎯</span> MỐC ĐO CHUYỂN ĐỘNG &amp; SỨC KHỎE BÁN HÀNG (SALES VELOCITY RADAR)
+          <span class="sub">5 mốc định lượng thời gian thực so với Ngưỡng an toàn để đưa ra hành động kịp thời</span>
+        </span>
+        <span class="sev-badge sev-low" style="font-size:11px; padding:3px 8px;">ĐANG THEO DÕI THỜI GIAN THỰC</span>
+      </div>
+      <div class="panel-body">
+        <div class="velocity-grid">
+          <!-- 1. Doanh thu khách quen -->
+          <div class="velocity-card" style="border-left: 3.5px solid var(--kelp);">
+            <div class="velocity-card-head">
+              <span class="velocity-card-title">🔄 Doanh thu Khách quen</span>
+              <span class="velocity-badge-status v-status-good" id="v-status-repeat">🟢 VƯỢT CHUẨN</span>
+            </div>
+            <div class="velocity-card-val"><span id="v-val-repeat">84.4%</span> <span class="sub-unit">(<span id="v-sub-repeat-rev">338M</span> / <span id="v-sub-total-rev">400M</span>)</span></div>
+            <div class="velocity-target-line">
+              <span>Ngưỡng chuẩn an toàn:</span>
+              <b style="color:var(--kelp);">≥ 75%</b>
+            </div>
+            <div class="velocity-track">
+              <div class="velocity-fill" id="v-fill-repeat" style="width: 93%; background: var(--kelp);"></div>
+            </div>
+            <div class="velocity-action-text" id="v-action-repeat">
+              💡 <b>Khách quen nuôi 84.4% shop:</b> Giữ chân tốt 410 khách quen này quan trọng gấp 5 lần tìm khách mới.
+            </div>
+          </div>
+
+          <!-- 2. Khách P1 Khẩn cấp -->
+          <div class="velocity-card" style="border-left: 3.5px solid var(--coral);">
+            <div class="velocity-card-head">
+              <span class="velocity-card-title">⚡ Khách P1 Khẩn cấp</span>
+              <span class="velocity-badge-status v-status-alert" id="v-status-p1">🔴 CẦN GỌI NGAY</span>
+            </div>
+            <div class="velocity-card-val"><span id="v-val-p1" style="color:var(--coral);">20 khách</span> <span class="sub-unit">(<span id="v-sub-p1-rev">48.2M</span> rủi ro)</span></div>
+            <div class="velocity-target-line">
+              <span>Ngưỡng cảnh báo:</span>
+              <b style="color:var(--coral);">≤ 25 khách</b>
+            </div>
+            <div class="velocity-track">
+              <div class="velocity-fill" id="v-fill-p1" style="width: 80%; background: var(--coral);"></div>
+            </div>
+            <div class="velocity-action-text" id="v-action-p1" style="border-left-color: var(--coral);">
+              📞 <b>Hành động ngay:</b> 20 khách VIP đang trễ 1-17 ngày. Bốc máy gọi hoặc nhắn Zalo chốt đơn hôm nay!
+            </div>
+          </div>
+
+          <!-- 3. Chu kỳ mua lặp trung bình -->
+          <div class="velocity-card" style="border-left: 3.5px solid var(--tide);">
+            <div class="velocity-card-head">
+              <span class="velocity-card-title">⏱️ Chu kỳ Mua lặp</span>
+              <span class="velocity-badge-status v-status-good" id="v-status-cycle">🟢 ỔN ĐỊNH</span>
+            </div>
+            <div class="velocity-card-val"><span id="v-val-cycle">13.8 ngày</span> <span class="sub-unit">(~2 tuần/lần)</span></div>
+            <div class="velocity-target-line">
+              <span>Ngưỡng chuẩn tự nhiên:</span>
+              <b style="color:var(--tide);">12 – 15 ngày</b>
+            </div>
+            <div class="velocity-track">
+              <div class="velocity-fill" id="v-fill-cycle" style="width: 92%; background: var(--tide);"></div>
+            </div>
+            <div class="velocity-action-text" id="v-action-cycle">
+              🎯 <b>Điểm rơi vàng:</b> Đến ngày thứ 14 khách chưa mua lại là thời điểm vàng để CSKH gửi menu mẻ mới.
+            </div>
+          </div>
+
+          <!-- 4. Giá trị đơn AOV -->
+          <div class="velocity-card" style="border-left: 3.5px solid var(--sand);">
+            <div class="velocity-card-head">
+              <span class="velocity-card-title">💰 Giá trị Đơn (AOV)</span>
+              <span class="velocity-badge-status v-status-warn" id="v-status-aov">🟡 CẦN UPSELL</span>
+            </div>
+            <div class="velocity-card-val"><span id="v-val-aov">192.8K</span> <span class="sub-unit">(Mục tiêu 210K)</span></div>
+            <div class="velocity-target-line">
+              <span>Mục tiêu tối ưu:</span>
+              <b style="color:var(--sand);">≥ 210.000đ</b>
+            </div>
+            <div class="velocity-track">
+              <div class="velocity-fill" id="v-fill-aov" style="width: 91%; background: var(--sand);"></div>
+            </div>
+            <div class="velocity-action-text" id="v-action-aov" style="border-left-color: var(--sand);">
+              🍣 <b>Cần thêm +17.2K/đơn:</b> Nhân viên tư vấn gợi ý thêm món phụ, nước chấm, đồ ăn kèm để đạt mốc 210K.
+            </div>
+          </div>
+
+          <!-- 5. Tỷ trọng Cuối tuần -->
+          <div class="velocity-card" style="border-left: 3.5px solid #a855f7;">
+            <div class="velocity-card-head">
+              <span class="velocity-card-title">🏖️ Tỷ trọng Cuối tuần</span>
+              <span class="velocity-badge-status v-status-good" id="v-status-weekend">🟢 CHUẨN NHỊP</span>
+            </div>
+            <div class="velocity-card-val"><span id="v-val-weekend">54.0%</span> <span class="sub-unit">(<span id="v-sub-wk-rev">216M</span> / 3 ngày)</span></div>
+            <div class="velocity-target-line">
+              <span>Khoảng chuẩn ngành:</span>
+              <b style="color:#c084fc;">50% – 60%</b>
+            </div>
+            <div class="velocity-track">
+              <div class="velocity-fill" id="v-fill-weekend" style="width: 90%; background: #a855f7;"></div>
+            </div>
+            <div class="velocity-action-text" id="v-action-weekend" style="border-left-color: #a855f7;">
+              ⚡ <b>Chuẩn bị hàng:</b> Nhập mẻ hải sản lớn nhất sáng T6, tập trung shipper ca 11h-12h và 17h-19h T6-CN.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 2 Biểu đồ: Vòng lặp mua hàng & Sức khỏe khách quen -->
     <div class="grid-2b" style="margin-bottom:16px;">
       <!-- Biểu đồ 1: Phân bổ khoảng thời gian vòng lặp mua hàng -->
       <div class="panel">
         <div class="panel-head">
           <span class="panel-title">Khoảng thời gian Vòng lặp Mua hàng
-            <span class="sub">Bao lâu thì khách quen đặt lại một lần?</span>
+            <span class="sub">Mốc chuẩn chu kỳ: 13.8 ngày (~2 tuần) · 72% khách quay lại trong 14 ngày</span>
           </span>
         </div>
         <div class="panel-body">
           <div class="chart-box"><canvas id="chartCycleDistribution"></canvas></div>
           <div style="margin-top:10px; font-size:11.5px; color:var(--mist); line-height:1.5;">
-            💡 <b>72% khách quen</b> quay lại đặt trong vòng <b>14 ngày</b> (50.6% đặt lại chỉ trong 7 ngày). Quá 20 ngày chưa mua lại là dấu hiệu sắp mất khách.
+            💡 <b>72% khách quen</b> quay lại đặt trong vòng <b>14 ngày</b> (49.8% đặt lại trong 7 ngày). Quá 18–20 ngày chưa mua lại là dấu hiệu sắp mất khách, cần kích hoạt ngay.
           </div>
         </div>
       </div>
@@ -2077,8 +2303,8 @@ select:focus { border-color: var(--tide); }
       <!-- Biểu đồ 2: Sức khỏe Khách quen & Mức độ Nguy cơ -->
       <div class="panel">
         <div class="panel-head">
-          <span class="panel-title">Phân loại Sức khỏe Khách quen
-            <span class="sub">Mức độ trễ hẹn so với chu kỳ thường mua</span>
+          <span class="panel-title">Phân loại Sức khỏe &amp; Dòng tiền Khách quen
+            <span class="sub">Mức độ trễ hẹn so với chu kỳ cá nhân &amp; Phân bổ doanh thu rủi ro</span>
           </span>
         </div>
         <div class="panel-body">
@@ -4361,6 +4587,10 @@ function initCustomerCycleAnalysis() {
   const medianCycle = sortedInts.length ? sortedInts[Math.floor(sortedInts.length / 2)] : 0;
 
   const p1Custs = crmCustomers.filter(c => c.pLevel === 'P1');
+  const p2Custs = crmCustomers.filter(c => c.pLevel === 'P2');
+  const p3Custs = crmCustomers.filter(c => c.pLevel === 'P3');
+  const p4Custs = crmCustomers.filter(c => c.pLevel === 'P4');
+
   const highRiskCusts = crmCustomers.filter(c => c.health === 'HIGH_RISK');
   const mildRiskCusts = crmCustomers.filter(c => c.health === 'MILD_RISK');
   const vipAtRiskCusts = crmCustomers.filter(c => c.isVip && (c.health === 'HIGH_RISK' || c.health === 'MILD_RISK'));
@@ -4369,6 +4599,32 @@ function initCustomerCycleAnalysis() {
 
   const totalAtRiskCount = highRiskCusts.length + mildRiskCusts.length;
   const totalAtRiskRev = highRiskCusts.concat(mildRiskCusts).reduce((s, c) => s + c.totalRev, 0);
+
+  const totalShopRev = activeAll.reduce((s, o) => s + (o.totalPrice || 0), 0) || 1;
+  const repeatTotalRev = crmCustomers.reduce((s, c) => s + c.totalRev, 0);
+  const repeatRevPct = ((repeatTotalRev / totalShopRev) * 100).toFixed(1);
+  const p1Rev = p1Custs.reduce((s, c) => s + c.totalRev, 0);
+  const p2Rev = p2Custs.reduce((s, c) => s + c.totalRev, 0);
+  const p3Rev = p3Custs.reduce((s, c) => s + c.totalRev, 0);
+  const p4Rev = p4Custs.reduce((s, c) => s + c.totalRev, 0);
+  const aov = Math.round(totalShopRev / (activeAll.length || 1));
+
+  // Weekend calculation (Friday, Saturday, Sunday)
+  let wkOrders = 0, wkRev = 0;
+  for (const o of activeAll) {
+    const ts = getOrderTs(o);
+    const d = new Date(ts);
+    const day = d.getDay(); // 0 is Sun, 5 is Fri, 6 is Sat
+    if (day === 0 || day === 5 || day === 6) {
+      wkOrders++;
+      wkRev += (o.totalPrice || 0);
+    }
+  }
+  const wkRevPct = ((wkRev / totalShopRev) * 100).toFixed(1);
+
+  // Update Hero customer count
+  const heroCustCount = document.getElementById('crm-hero-cust-count');
+  if (heroCustCount) heroCustCount.textContent = crmCustomers.length;
 
   const badgeCrm = document.getElementById('badge-crm');
   if (badgeCrm) badgeCrm.textContent = totalAtRiskCount;
@@ -4380,6 +4636,41 @@ function initCustomerCycleAnalysis() {
   document.getElementById('crm-stat-atrisk').textContent = `${totalAtRiskCount} khách`;
   document.getElementById('crm-stat-atrisk-rev').textContent = fmtK(totalAtRiskRev);
 
+  // ══════ UPDATE 5 SALES VELOCITY BENCHMARKS ══════
+  const elValRepeat = document.getElementById('v-val-repeat');
+  if (elValRepeat) elValRepeat.textContent = `${repeatRevPct}%`;
+  const elSubRepeatRev = document.getElementById('v-sub-repeat-rev');
+  if (elSubRepeatRev) elSubRepeatRev.textContent = fmtK(repeatTotalRev);
+  const elSubTotalRev = document.getElementById('v-sub-total-rev');
+  if (elSubTotalRev) elSubTotalRev.textContent = fmtK(totalShopRev);
+  const elFillRepeat = document.getElementById('v-fill-repeat');
+  if (elFillRepeat) elFillRepeat.style.width = `${Math.min(100, Math.max(15, (repeatRevPct / 90) * 100))}%`;
+
+  const elValP1 = document.getElementById('v-val-p1');
+  if (elValP1) elValP1.textContent = `${p1Custs.length} khách`;
+  const elSubP1Rev = document.getElementById('v-sub-p1-rev');
+  if (elSubP1Rev) elSubP1Rev.textContent = fmtK(p1Rev);
+  const elFillP1 = document.getElementById('v-fill-p1');
+  if (elFillP1) elFillP1.style.width = `${Math.min(100, Math.max(15, (p1Custs.length / 25) * 100))}%`;
+
+  const elValCycle = document.getElementById('v-val-cycle');
+  if (elValCycle) elValCycle.textContent = `${avgCycle} ngày`;
+  const elFillCycle = document.getElementById('v-fill-cycle');
+  if (elFillCycle) elFillCycle.style.width = `${Math.min(100, Math.max(20, (13.8 / (avgCycle || 1)) * 90))}%`;
+
+  const elValAov = document.getElementById('v-val-aov');
+  if (elValAov) elValAov.textContent = fmtK(aov);
+  const elFillAov = document.getElementById('v-fill-aov');
+  if (elFillAov) elFillAov.style.width = `${Math.min(100, Math.max(15, (aov / 210000) * 100))}%`;
+
+  const elValWeekend = document.getElementById('v-val-weekend');
+  if (elValWeekend) elValWeekend.textContent = `${wkRevPct}%`;
+  const elSubWkRev = document.getElementById('v-sub-wk-rev');
+  if (elSubWkRev) elSubWkRev.textContent = fmtK(wkRev);
+  const elFillWeekend = document.getElementById('v-fill-weekend');
+  if (elFillWeekend) elFillWeekend.style.width = `${Math.min(100, Math.max(15, (wkRevPct / 65) * 100))}%`;
+
+  // Chips
   const chipP1 = document.getElementById('chip-count-p1');
   if (chipP1) chipP1.textContent = p1Custs.length;
   document.getElementById('chip-count-high').textContent = highRiskCusts.length;
@@ -4389,11 +4680,11 @@ function initCustomerCycleAnalysis() {
   document.getElementById('chip-count-dormant').textContent = dormantCusts.length;
   document.getElementById('chip-count-all').textContent = crmCustomers.length;
 
-  renderCrmCharts(intervalsAll, healthyCusts.length, mildRiskCusts.length, highRiskCusts.length, dormantCusts.length);
+  renderCrmCharts(intervalsAll, p1Custs, p2Custs, p3Custs, p4Custs, p1Rev, p2Rev, p3Rev, p4Rev);
   renderCrmTable();
 }
 
-function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
+function renderCrmCharts(intervalsAll, p1Custs, p2Custs, p3Custs, p4Custs, p1Rev, p2Rev, p3Rev, p4Rev) {
   const intUnder7 = intervalsAll.filter(x => x <= 7).length;
   const int8to14 = intervalsAll.filter(x => x > 7 && x <= 14).length;
   const int15to30 = intervalsAll.filter(x => x > 14 && x <= 30).length;
@@ -4405,7 +4696,7 @@ function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
   chartCycleDistributionInstance = new Chart(document.getElementById('chartCycleDistribution'), {
     type: 'bar',
     data: {
-      labels: ['≤ 7 ngày', '8 - 14 ngày', '15 - 30 ngày', '31 - 60 ngày', '> 60 ngày'],
+      labels: ['≤ 7 ngày (Giai đoạn Vàng)', '8 - 14 ngày (Chu kỳ chuẩn)', '15 - 30 ngày (Trễ nhẹ)', '31 - 60 ngày (Nguy cơ)', '> 60 ngày (Ngủ đông)'],
       datasets: [{
         label: 'Số lần mua lại',
         data: [intUnder7, int8to14, int15to30, int31to60, intOver60],
@@ -4422,29 +4713,36 @@ function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
           callbacks: {
             label: c => {
               const pct = ((c.raw / totalInts) * 100).toFixed(1);
-              return `${c.raw.toLocaleString('vi-VN')} lần (${pct}%)`;
+              let desc = '';
+              if (c.dataIndex === 0) desc = ' · Mua dồn dập trong tuần';
+              else if (c.dataIndex === 1) desc = ' · Chu kỳ mua chuẩn (~2 tuần)';
+              else if (c.dataIndex === 2) desc = ' · Thời điểm vàng CSKH';
+              else if (c.dataIndex === 3) desc = ' · Nguy cơ cao mất khách';
+              else desc = ' · Khách đã ngủ đông';
+              return `${c.raw.toLocaleString('vi-VN')} lần (${pct}%)${desc}`;
             }
           }
         }
       },
       scales: {
-        x: { ticks: { font: { size: 10.5 } } },
+        x: { ticks: { font: { size: 10 } } },
         y: { ticks: { font: { size: 10 } } }
       }
     }
   });
 
-  const healthData = [nHealthy, nMild, nHigh, nDormant];
-  const totalHealth = healthData.reduce((a, b) => a + b, 0) || 1;
+  const priorityCounts = [p1Custs.length, p2Custs.length, p3Custs.length, p4Custs.length];
+  const priorityRevs = [p1Rev, p2Rev, p3Rev, p4Rev];
+  const totalCusts = priorityCounts.reduce((a, b) => a + b, 0) || 1;
 
   if (chartCustomerHealthInstance) chartCustomerHealthInstance.destroy();
   chartCustomerHealthInstance = new Chart(document.getElementById('chartCustomerHealth'), {
     type: 'doughnut',
     data: {
-      labels: ['Đang mua đều', 'Trễ hẹn nhẹ (4-14d)', 'Nguy cơ mất (>14d)', 'Ngủ đông (>60d)'],
+      labels: ['🔴 P1 Khẩn cấp', '🟠 P2 Ưu tiên cao', '🟡 P3 Theo dõi', '🟢 P4 Đúng hẹn'],
       datasets: [{
-        data: healthData,
-        backgroundColor: ['#34d399', '#fbbf24', '#fb7185', '#94a3b8'],
+        data: priorityCounts,
+        backgroundColor: ['#ef4444', '#fb923c', '#facc15', '#34d399'],
         borderWidth: 0
       }]
     },
@@ -4455,8 +4753,10 @@ function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
         tooltip: {
           callbacks: {
             label: c => {
-              const pct = ((c.raw / totalHealth) * 100).toFixed(1);
-              return `${c.label}: ${c.raw} khách (${pct}%)`;
+              const count = c.raw;
+              const rev = priorityRevs[c.dataIndex];
+              const pct = ((count / totalCusts) * 100).toFixed(1);
+              return `${c.label}: ${count} khách (${pct}%) · Doanh thu: ${fmt(rev)}`;
             }
           }
         }
@@ -4464,21 +4764,21 @@ function renderCrmCharts(intervalsAll, nHealthy, nMild, nHigh, nDormant) {
     }
   });
 
-  const healthRows = [
-    { label: '🟢 Đang mua đều đặn', count: nHealthy, color: '#34d399' },
-    { label: '🟡 Trễ hẹn nhẹ (4-14 ngày)', count: nMild, color: '#fbbf24' },
-    { label: '🔴 Nguy cơ mất cao (>14 ngày)', count: nHigh, color: '#fb7185' },
-    { label: '⚪ Ngủ đông (>60 ngày)', count: nDormant, color: '#94a3b8' },
+  const priorityRows = [
+    { label: '🔴 P1 Khẩn cấp (trễ hạn & chi tiêu lớn)', count: p1Custs.length, rev: p1Rev, color: '#ef4444', action: 'Gọi/Zalo ngay' },
+    { label: '🟠 P2 Ưu tiên cao (trễ hẹn hoặc chi tiêu khá)', count: p2Custs.length, rev: p2Rev, color: '#fb923c', action: 'Xếp lịch tuần' },
+    { label: '🟡 P3 Theo dõi (chu kỳ dài / chi tiêu vừa)', count: p3Custs.length, rev: p3Rev, color: '#facc15', action: 'Gửi ưu đãi' },
+    { label: '🟢 P4 Bình thường (đang mua đều đúng hẹn)', count: p4Custs.length, rev: p4Rev, color: '#34d399', action: 'Chăm sóc đều' },
   ];
-  document.getElementById('crm-health-legend').innerHTML = healthRows.map(h => `
-    <div class="cohort-legend-row">
+  document.getElementById('crm-health-legend').innerHTML = priorityRows.map(h => `
+    <div class="cohort-legend-row" style="padding: 4px 0;">
       <div class="cohort-legend-left">
         <span class="cohort-dot" style="background:${h.color}"></span>
         <span class="cohort-legend-name" style="font-size:11.5px">${h.label}</span>
       </div>
-      <div class="cohort-legend-right">
-        <span class="cohort-val">${h.count} khách</span>
-        <span class="cohort-pct">${((h.count/totalHealth)*100).toFixed(1)}%</span>
+      <div class="cohort-legend-right" style="display:flex; align-items:center; gap:8px;">
+        <span class="cohort-val" style="font-weight:700;">${h.count} khách</span>
+        <span class="cohort-pct" style="color:var(--sand); font-family:var(--font-mono); font-weight:600;">(${fmtK(h.rev)})</span>
       </div>
     </div>
   `).join('');
