@@ -12,8 +12,7 @@
  *     (đơn mới / đổi trạng thái / đổi giá / đổi địa chỉ / xoá đơn)
  *  3. Gộp toàn bộ đơn hàng về trạng thái mới nhất (từ snapshot mới nhất)
  *  4. Tính KPI, top sản phẩm/khách hàng/lô hàng
- *  5. Anomaly detection trên giá, số lượng, doanh thu theo ngày
- *  6. Render dist/index.html (1 file, data nhúng inline)
+ *  5. Render dist/index.html (1 file, data nhúng inline)
  */
 
 const fs = require("fs");
@@ -214,7 +213,7 @@ console.log(`🔄 Phát hiện ${changeEvents.length} sự kiện thay đổi gi
 const allOrders = Array.from(latest.orders.values());
 
 // Tách đơn đã xoá mềm (deleteFlag=true) ra riêng — KHÔNG tính vào KPI,
-// doanh thu, sản phẩm, lô hàng, anomaly. Người dùng hay xoá mềm thay vì
+// doanh thu, sản phẩm, lô hàng. Người dùng hay xoá mềm thay vì
 // chuyển status sang CANCELLED, nên nếu không tách sẽ làm sai số liệu.
 const liveOrders = allOrders.filter((o) => !isDeleted(o));
 const deletedOrders = allOrders.filter((o) => isDeleted(o));
@@ -380,176 +379,7 @@ const transferUnverifiedRevenue = transferOrders
   .filter((o) => o.paymentVerified !== true)
   .reduce((s, o) => s + (o.totalPrice || 0), 0);
 
-// ════════════════════════════════════════════════════════════
-// 4. ANOMALY DETECTION
-// ════════════════════════════════════════════════════════════
-const anomalies = [];
 
-// (a) Giá bất thường: item price lệch >2.5 std-dev khỏi giá trung bình SẢN PHẨM CÙNG TÊN
-const priceByProduct = {};
-for (const o of activeOrders) {
-  for (const item of o.items || []) {
-    const name = (item.name || "").trim();
-    if (!name || !item.price) continue;
-    if (!priceByProduct[name]) priceByProduct[name] = [];
-    priceByProduct[name].push({ price: item.price, orderId: o.id, customerName: o.customerName });
-  }
-}
-for (const [name, prices] of Object.entries(priceByProduct)) {
-  if (prices.length < 5) continue; // cần đủ mẫu
-  const vals = prices.map((p) => p.price);
-  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-  const variance = vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length;
-  const std = Math.sqrt(variance);
-  if (std === 0) continue;
-  for (const p of prices) {
-    const z = (p.price - mean) / std;
-    if (Math.abs(z) > 2.8) {
-      anomalies.push({
-        type: "PRICE_OUTLIER",
-        severity: Math.abs(z) > 4 ? "high" : "medium",
-        title: `Giá bất thường: ${name}`,
-        detail: `${p.price.toLocaleString("vi-VN")}đ (TB: ${Math.round(mean).toLocaleString("vi-VN")}đ, z=${z.toFixed(1)})`,
-        orderId: p.orderId,
-        customerName: p.customerName,
-      });
-    }
-  }
-}
-
-// (b) Đơn giá trị quá cao so với phân phối chung
-{
-  const vals = activeOrders.map((o) => o.totalPrice || 0).filter((v) => v > 0);
-  if (vals.length > 10) {
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const variance = vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length;
-    const std = Math.sqrt(variance);
-    for (const o of activeOrders) {
-      const z = std ? (o.totalPrice - mean) / std : 0;
-      if (z > 3.5) {
-        anomalies.push({
-          type: "ORDER_VALUE_HIGH",
-          severity: z > 5 ? "high" : "medium",
-          title: `Đơn giá trị cao bất thường`,
-          detail: `${(o.totalPrice || 0).toLocaleString("vi-VN")}đ (TB: ${Math.round(mean).toLocaleString("vi-VN")}đ)`,
-          orderId: o.id,
-          customerName: o.customerName,
-        });
-      }
-    }
-  }
-}
-
-// (c) Doanh thu ngày bất thường (spike / drop so với 14 ngày liền trước)
-for (let i = 7; i < dailyKeys.length; i++) {
-  const window = dailyRevenue.slice(Math.max(0, i - 14), i);
-  if (window.length < 5) continue;
-  const mean = window.reduce((a, b) => a + b, 0) / window.length;
-  const std = Math.sqrt(window.reduce((a, b) => a + (b - mean) ** 2, 0) / window.length);
-  if (std === 0) continue;
-  const z = (dailyRevenue[i] - mean) / std;
-  if (Math.abs(z) > 2.5) {
-    anomalies.push({
-      type: z > 0 ? "REVENUE_SPIKE" : "REVENUE_DROP",
-      severity: Math.abs(z) > 3.5 ? "high" : "medium",
-      title: z > 0 ? "Doanh thu tăng vọt" : "Doanh thu sụt giảm",
-      detail: `${dailyKeys[i]}: ${dailyRevenue[i].toLocaleString("vi-VN")}đ (TB 14 ngày: ${Math.round(mean).toLocaleString("vi-VN")}đ)`,
-      date: dailyKeys[i],
-    });
-  }
-}
-
-// (d) Khách hàng đặt đơn liên tiếp bất thường nhanh (khả năng trùng / spam)
-{
-  const byCustomer = {};
-  for (const o of activeOrders) {
-    const cid = o.customerId || o.customerName;
-    if (!cid) continue;
-    if (!byCustomer[cid]) byCustomer[cid] = [];
-    const d = tsToDate(o.createdAt);
-    if (d) byCustomer[cid].push({ time: d.getTime(), order: o });
-  }
-  for (const [cid, list] of Object.entries(byCustomer)) {
-    if (list.length < 2) continue;
-    list.sort((a, b) => a.time - b.time);
-    for (let i = 1; i < list.length; i++) {
-      const diffMin = (list[i].time - list[i - 1].time) / 60000;
-      if (diffMin < 3 && diffMin >= 0) {
-        anomalies.push({
-          type: "DUPLICATE_SUSPECT",
-          severity: "low",
-          title: "Khả năng đơn trùng lặp",
-          detail: `${list[i].order.customerName || "—"}: 2 đơn cách nhau ${diffMin.toFixed(1)} phút`,
-          orderId: list[i].order.id,
-          customerName: list[i].order.customerName,
-        });
-      }
-    }
-  }
-}
-
-// (e) Đơn PENDING quá lâu (>5 ngày kể từ createdAt, vẫn pending tại snapshot cuối)
-{
-  const now = Date.now();
-  for (const o of liveOrders) {
-    if (o.status !== "PENDING") continue;
-    const d = tsToDate(o.createdAt);
-    if (!d) continue;
-    const ageDays = (now - d.getTime()) / 86400000;
-    if (ageDays > 5) {
-      anomalies.push({
-        type: "STALE_PENDING",
-        severity: ageDays > 14 ? "high" : "medium",
-        title: "Đơn chờ xử lý quá lâu",
-        detail: `${o.customerName || "—"}: ${Math.floor(ageDays)} ngày chưa xử lý`,
-        orderId: o.id,
-        customerName: o.customerName,
-      });
-    }
-  }
-}
-
-// (f) Chuyển khoản chưa xác nhận quá lâu (>3 ngày, vẫn chưa verified tại snapshot cuối)
-{
-  const now = Date.now();
-  for (const o of liveOrders) {
-    if (o.paymentMethod !== "TRANSFER") continue;
-    if (o.paymentVerified === true) continue;
-    if (o.status === "CANCELLED") continue;
-    const d = tsToDate(o.createdAt);
-    if (!d) continue;
-    const ageDays = (now - d.getTime()) / 86400000;
-    if (ageDays > 3) {
-      anomalies.push({
-        type: "UNVERIFIED_TRANSFER",
-        severity: ageDays > 10 ? "high" : "medium",
-        title: "Chuyển khoản chưa xác nhận",
-        detail: `${o.customerName || "—"}: ${(o.totalPrice || 0).toLocaleString("vi-VN")}đ · ${Math.floor(ageDays)} ngày chưa xác nhận`,
-        orderId: o.id,
-        customerName: o.customerName,
-      });
-    }
-  }
-}
-
-// Chọn đại diện cân đối: ưu tiên mỗi LOẠI bất thường đều có mặt (tối đa N/loại),
-// trong mỗi loại thì ưu tiên severity cao trước. Tránh trường hợp loại xuất hiện
-// nhiều (như STALE_PENDING) lấn hết chỗ của loại khác (như UNVERIFIED_TRANSFER).
-const SEV_RANK = { high: 3, medium: 2, low: 1 };
-const PER_TYPE_LIMIT = 15;
-const byType = {};
-for (const a of anomalies) {
-  (byType[a.type] = byType[a.type] || []).push(a);
-}
-let topAnomalies = [];
-for (const type of Object.keys(byType)) {
-  const sorted = byType[type].sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity]);
-  topAnomalies.push(...sorted.slice(0, PER_TYPE_LIMIT));
-}
-// Sắp xếp lại toàn bộ theo severity để hiển thị cái nghiêm trọng nhất lên đầu
-topAnomalies.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity]);
-
-console.log(`🔍 Phát hiện ${anomalies.length} bất thường (hiển thị top ${topAnomalies.length})`);
 
 // ════════════════════════════════════════════════════════════
 // 5. SNAPSHOT LOG (cho phần lịch sử backup)
@@ -665,8 +495,6 @@ const dashData = {
   topCustomers,
   topBatches,
   batches: allBatches,
-  anomalies: topAnomalies,
-  anomalyTotal: anomalies.length,
   changeEvents: changeEventsFlat,
   changeEventsTotal: changeEvents.length,
   snapshotSummaries,
@@ -687,7 +515,7 @@ fs.writeFileSync(path.join(DIST_DIR, "index.html"), html, "utf8");
 
 console.log(`\n✅ Dashboard built → dist/index.html`);
 console.log(
-  `   ${liveOrders.length} đơn hoạt động (+ ${deletedOrders.length} đã xoá mềm) | ${allBatches.length} lô hàng | ${changeEvents.length} thay đổi | ${anomalies.length} bất thường`
+  `   ${liveOrders.length} đơn hoạt động (+ ${deletedOrders.length} đã xoá mềm) | ${allBatches.length} lô hàng | ${changeEvents.length} thay đổi`
 );
 console.log(
   `   Doanh thu: ${(totalRevenue / 1e6).toFixed(2)}M đ | Chuyển khoản chưa xác nhận: ${transferUnverified} đơn (${(transferUnverifiedRevenue / 1e6).toFixed(2)}M đ)`

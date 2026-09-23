@@ -755,21 +755,7 @@ select:focus { border-color: var(--tide); }
 .hist-type.SOFT_DELETED { background: rgba(251,113,133,.15); color: var(--coral); }
 .hist-type.SOFT_RESTORED { background: rgba(52,211,153,.15); color: var(--kelp); }
 
-/* ════════════════════════════════════════════════════════════
-   ANOMALY CARDS
-   ════════════════════════════════════════════════════════════ */
-.anomaly-list { display: flex; flex-direction: column; }
-.anomaly-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 13px 18px; border-bottom: 1px solid var(--line-soft);
-  cursor: pointer;
-}
-.anomaly-row:hover { background: rgba(251,146,60,.04); }
-.anomaly-icon { font-size: 17px; flex-shrink: 0; width: 22px; text-align: center; }
-.anomaly-main { flex: 1; min-width: 0; }
-.anomaly-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.anomaly-detail { font-size: 12px; color: var(--mist); font-family: var(--font-mono); }
-.anomaly-customer { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
+
 
 /* ════════════════════════════════════════════════════════════
    REPORT VIEW
@@ -802,7 +788,7 @@ select:focus { border-color: var(--tide); }
   header, nav.tabs, .date-filter-bar, .filter-bar, .print-btn, .btn-excel, .drawer, .drawer-backdrop { display: none !important; }
   body { background: white; color: black; }
   .view { display: block !important; }
-  #view-orders, #view-batches, #view-deleted, #view-history, #view-anomalies, #view-overview { display: none !important; }
+  #view-orders, #view-batches, #view-deleted, #view-history, #view-overview { display: none !important; }
   #view-report { display: block !important; }
 }
 
@@ -1029,7 +1015,6 @@ select:focus { border-color: var(--tide); }
     <button class="tab-btn" data-view="batches">🧺 Lô hàng <span class="tab-badge" id="badge-batches">0</span></button>
     <button class="tab-btn" data-view="deleted">🗑️ Đã xoá mềm <span class="tab-badge alert" id="badge-deleted">0</span></button>
     <button class="tab-btn" data-view="history">🕒 Lịch sử thay đổi <span class="tab-badge" id="badge-history">0</span></button>
-    <button class="tab-btn" data-view="anomalies">⚠️ Bất thường <span class="tab-badge alert" id="badge-anomalies">0</span></button>
     <button class="tab-btn" data-view="report">📄 Báo cáo</button>
   </div>
 </nav>
@@ -1350,33 +1335,7 @@ select:focus { border-color: var(--tide); }
     </div>
   </section>
 
-  <!-- ═══════════════ ANOMALIES ═══════════════ -->
-  <section class="view" id="view-anomalies">
-    <div class="panel">
-      <div class="filter-bar">
-        <div class="chip-group" id="anomaly-sev-chips">
-          <button class="chip active" data-sev="">Tất cả mức độ</button>
-          <button class="chip" data-sev="high">🔴 Cao</button>
-          <button class="chip" data-sev="medium">🟠 Trung bình</button>
-          <button class="chip" data-sev="low">🔵 Thấp</button>
-        </div>
-        <div class="chip-group" id="anomaly-type-chips">
-          <button class="chip active" data-type="">Tất cả loại</button>
-          <button class="chip" data-type="PRICE_OUTLIER">Giá lệch</button>
-          <button class="chip" data-type="ORDER_VALUE_HIGH">Đơn giá trị cao</button>
-          <button class="chip" data-type="REVENUE_SPIKE">DT tăng vọt</button>
-          <button class="chip" data-type="REVENUE_DROP">DT sụt giảm</button>
-          <button class="chip" data-type="DUPLICATE_SUSPECT">Nghi trùng</button>
-          <button class="chip" data-type="STALE_PENDING">Tồn đọng</button>
-          <button class="chip" data-type="UNVERIFIED_TRANSFER">CK chưa xác nhận</button>
-        </div>
-      </div>
-      <div class="anomaly-list" id="anomaly-list"></div>
-      <div id="anomaly-empty" class="empty-state hidden">
-        <div class="icon">✅</div><div class="msg">Không có bất thường nào khớp với bộ lọc</div>
-      </div>
-    </div>
-  </section>
+
 
   <!-- ═══════════════ REPORT ═══════════════ -->
   <section class="view" id="view-report">
@@ -1467,7 +1426,6 @@ document.getElementById('meta-updated').textContent = 'Cập nhật ' + fmtDateT
 document.getElementById('meta-backups').textContent = D.meta.backupCount + ' kỳ backup (' + D.meta.firstBackup + ' → ' + D.meta.lastBackup + ')';
 document.getElementById('badge-orders').textContent = D.stats.totalOrders;
 document.getElementById('badge-history').textContent = D.changeEventsTotal;
-document.getElementById('badge-anomalies').textContent = D.anomalyTotal;
 
 /* ════════════════ TAB NAVIGATION ════════════════ */
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1674,7 +1632,7 @@ function renderKpis() {
     { label: 'Doanh thu đặt hàng', value: fmtK(s.totalRevenue), sub: fmt(s.totalRevenue), icon: '📈' },
     { label: 'Giá trị TB / đơn', value: fmtK(s.avgOrderValue), sub: 'trung bình', icon: '🏷️' },
     { label: 'Đang giao & Chờ', value: (s.pending + s.inTransit + s.pickedUp).toLocaleString('vi-VN'), sub: fmtK(s.pipelineRevenue), icon: '⏳', warn: (s.pending > 0) },
-    { label: 'CK chưa xác nhận', value: s.transferUnverified.toLocaleString('vi-VN'), sub: fmt(s.transferUnverifiedRevenue), icon: '🏦', view: 'anomalies', warn: (s.transferUnverified > 0) },
+    { label: 'CK chưa xác nhận', value: s.transferUnverified.toLocaleString('vi-VN'), sub: fmt(s.transferUnverifiedRevenue), icon: '🏦', view: 'orders-unverified', warn: (s.transferUnverified > 0) },
     { label: 'Đã huỷ & Xoá', value: (s.cancelled + D.stats.deletedCount).toLocaleString('vi-VN'), sub: 'thất thoát ' + fmtK(s.cancelledRevenue), icon: '🗑️', view: 'deleted', warn: (s.cancelled > 0) },
   ];
   document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
@@ -1684,7 +1642,18 @@ function renderKpis() {
       <p class="kpi-sub">${k.sub}</p>
     </div>`).join('');
   document.querySelectorAll('#kpi-grid [data-jump]').forEach(card => {
-    card.addEventListener('click', () => switchView(card.dataset.jump));
+    card.addEventListener('click', () => {
+      const jump = card.dataset.jump;
+      if (jump === 'orders-unverified') {
+        switchView('orders');
+        const paySel = document.getElementById('order-payment-filter');
+        if (paySel) paySel.value = 'TRANSFER_UNVERIFIED';
+        orderFilterState.payment = 'TRANSFER_UNVERIFIED';
+        renderOrders();
+      } else {
+        switchView(jump);
+      }
+    });
   });
 }
 
@@ -2682,39 +2651,7 @@ document.querySelectorAll('#history-type-chips .chip').forEach(chip => {
 });
 renderHistory();
 
-/* ════════════════ ANOMALIES VIEW ════════════════ */
-const ANOMALY_ICON = { PRICE_OUTLIER:'💸', ORDER_VALUE_HIGH:'🧾', REVENUE_SPIKE:'📈', REVENUE_DROP:'📉', DUPLICATE_SUSPECT:'🪞', STALE_PENDING:'🐌', UNVERIFIED_TRANSFER:'🏦' };
-let anomalyFilter = { sev:'', type:'' };
-function renderAnomalies() {
-  let rows = D.anomalies.filter(a => (!anomalyFilter.sev || a.severity === anomalyFilter.sev) && (!anomalyFilter.type || a.type === anomalyFilter.type));
-  document.getElementById('anomaly-list').innerHTML = rows.map(a => `
-    <div class="anomaly-row" data-id="${esc(a.orderId||'')}">
-      <span class="anomaly-icon">${ANOMALY_ICON[a.type]||'⚠️'}</span>
-      <div class="anomaly-main">
-        <div class="anomaly-title">${esc(a.title)}</div>
-        <div class="anomaly-detail">${esc(a.detail)}</div>
-      </div>
-      <span class="sev-badge sev-${a.severity}">${a.severity}</span>
-      ${a.customerName ? `<span class="anomaly-customer">${esc(a.customerName)}</span>` : ''}
-    </div>`).join('');
-  document.getElementById('anomaly-empty').classList.toggle('hidden', rows.length > 0);
-  document.querySelectorAll('#anomaly-list .anomaly-row').forEach(r => {
-    if (r.dataset.id) r.addEventListener('click', () => openOrderDrawer(r.dataset.id));
-  });
-}
-document.querySelectorAll('#anomaly-sev-chips .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#anomaly-sev-chips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active'); anomalyFilter.sev = chip.dataset.sev; renderAnomalies();
-  });
-});
-document.querySelectorAll('#anomaly-type-chips .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#anomaly-type-chips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active'); anomalyFilter.type = chip.dataset.type; renderAnomalies();
-  });
-});
-renderAnomalies();
+
 
 /* ════════════════ REPORT VIEW ════════════════ */
 function renderReportView() {
