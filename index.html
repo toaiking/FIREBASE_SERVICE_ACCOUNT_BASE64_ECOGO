@@ -426,6 +426,7 @@ nav.tabs::-webkit-scrollbar { display: none; }
   align-items: center;
   gap: 4px;
   transition: transform .12s, opacity .12s;
+  white-space: nowrap;
 }
 .btn-action-zalo:hover { transform: translateY(-1px); opacity: .9; }
 
@@ -441,6 +442,7 @@ nav.tabs::-webkit-scrollbar { display: none; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 .btn-action-call:hover { background: rgba(52, 211, 153, 0.25); }
 
@@ -456,8 +458,68 @@ nav.tabs::-webkit-scrollbar { display: none; }
   align-items: center;
   gap: 4px;
   transition: all .12s;
+  white-space: nowrap;
 }
 .btn-action-msg:hover { background: var(--tide-dim); border-color: var(--tide); color: var(--tide); }
+
+.crm-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.crm-sort-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.crm-sort-label {
+  font-size: 11px;
+  color: var(--mist);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.crm-sort-select {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--foam);
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.crm-sort-select:focus { border-color: var(--tide); }
+
+.crm-phone-link {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--mist);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color .12s;
+}
+.crm-phone-link:hover { color: var(--tide); }
+.crm-no-phone { font-size: 11px; color: var(--dim); }
+
+.crm-badge-mobile { display: none; }
+.crm-m-lbl { display: none; }
+.crm-col-badge-desktop { display: table-cell; }
+.crm-actions-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.crm-prod-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--foam);
+  font-size: 12px;
+}
 
 .crm-modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65);
@@ -467,23 +529,23 @@ nav.tabs::-webkit-scrollbar { display: none; }
 .crm-modal-backdrop.open { display: flex; animation: fadeIn .2s ease; }
 .crm-modal-box {
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius); width: 100%; max-width: 480px;
+  border-radius: var(--radius); width: 100%; max-width: 500px;
   padding: 22px; box-shadow: 0 12px 36px rgba(0,0,0,0.5);
   position: relative;
 }
 .crm-modal-head {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
 }
 .crm-modal-title { font-size: 15px; font-weight: 700; color: var(--foam); }
 .crm-modal-close {
-  background: none; border: none; font-size: 20px; color: var(--dim); cursor: pointer;
+  background: none; border: none; font-size: 22px; color: var(--dim); cursor: pointer; line-height: 1;
 }
 .crm-modal-close:hover { color: var(--foam); }
 .crm-msg-textarea {
-  width: 100%; height: 110px; background: var(--depth);
+  width: 100%; min-height: 110px; background: var(--depth);
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   color: var(--foam); padding: 10px; font-family: var(--font-display);
-  font-size: 13px; line-height: 1.5; resize: none; margin: 12px 0; outline: none;
+  font-size: 13px; line-height: 1.5; resize: vertical; margin: 10px 0 14px; outline: none;
 }
 .crm-msg-textarea:focus { border-color: var(--tide); }
 .crm-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -1187,6 +1249,280 @@ select:focus { border-color: var(--tide); }
   .report-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .report-hero { padding: 16px; }
   .report-hero h2 { font-size: 18px; }
+
+  /* CRM Repurchase Cycle & At-Risk Customer Mobile Card View */
+  #view-crm .panel-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  #view-crm .filter-bar {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .crm-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+  .crm-sort-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .crm-sort-select {
+    flex: 1;
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .crm-chip-group {
+    padding: 2px 0 6px;
+    gap: 6px;
+  }
+  .crm-chip-group .chip {
+    padding: 7px 12px;
+    font-size: 11px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  #view-crm .table-scroll {
+    overflow-x: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  #view-crm table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  #view-crm thead {
+    display: none !important;
+  }
+  #view-crm tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+  #view-crm tbody tr.crm-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "cust cust"
+      "prod prod"
+      "count rev"
+      "cycle last"
+      "acts acts";
+    gap: 8px 10px;
+    background: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    padding: 13px 14px !important;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.3) !important;
+    position: relative;
+  }
+  #view-crm tbody tr.crm-row.high-risk {
+    border-left: 4.5px solid var(--coral) !important;
+  }
+  #view-crm tbody tr.crm-row.mild-risk {
+    border-left: 4.5px solid var(--sand) !important;
+  }
+  #view-crm tbody tr.crm-row.healthy {
+    border-left: 4.5px solid var(--kelp) !important;
+  }
+  #view-crm tbody tr.crm-row.dormant {
+    border-left: 4.5px solid var(--dim) !important;
+  }
+
+  .crm-col-cust {
+    grid-area: cust;
+    display: block !important;
+    padding: 0 0 8px !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-soft) !important;
+    width: 100%;
+  }
+  .crm-cust-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .crm-name-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .crm-name-txt {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--foam);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .crm-badge-mobile {
+    display: block !important;
+    flex-shrink: 0;
+  }
+  .crm-col-badge-desktop {
+    display: none !important;
+  }
+  .crm-phone-wrap {
+    margin-top: 4px;
+  }
+  .crm-phone-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--tide);
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .crm-no-phone {
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  .crm-col-prod {
+    grid-area: prod;
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0 4px !important;
+    border: none !important;
+    font-size: 12px;
+    width: 100%;
+  }
+  .crm-prod-badge {
+    background: rgba(45, 212, 191, 0.08);
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--foam);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+  }
+
+  .crm-col-stat {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6px 10px !important;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft) !important;
+    border-radius: 6px;
+    text-align: left !important;
+    gap: 2px;
+  }
+  .crm-stat-count { grid-area: count; }
+  .crm-stat-rev { grid-area: rev; }
+  .crm-stat-cycle { grid-area: cycle; }
+  .crm-stat-last { grid-area: last; }
+
+  .crm-m-lbl {
+    display: block !important;
+    font-size: 10px;
+    color: var(--mist);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .crm-m-val {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--foam);
+  }
+
+  .crm-col-actions {
+    grid-area: acts;
+    display: block !important;
+    padding: 8px 0 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--line-soft) !important;
+    width: 100%;
+  }
+  .crm-actions-bar {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .crm-actions-bar .btn-action-zalo,
+  .crm-actions-bar .btn-action-call,
+  .crm-actions-bar .btn-action-msg {
+    height: 38px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    text-align: center;
+  }
+  .crm-actions-bar .btn-action-zalo {
+    flex: 1.2;
+    background: #0068ff;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(0, 104, 255, 0.35);
+  }
+  .crm-actions-bar .btn-action-call {
+    flex: 0.9;
+    background: rgba(52, 211, 153, 0.18);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    color: var(--kelp) !important;
+  }
+  .crm-actions-bar .btn-action-msg {
+    flex: 1.1;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--foam);
+  }
+
+  /* Modal on mobile (Bottom-sheet style) */
+  .crm-modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .crm-modal-box {
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 18px 16px 24px !important;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-bottom: none !important;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.6) !important;
+  }
+  .crm-modal-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .crm-modal-actions button,
+  .crm-modal-actions a {
+    width: 100% !important;
+    height: 42px !important;
+    font-size: 13px !important;
+    justify-content: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
 }
 
 /* Extra Small Phones (<= 380px) */
@@ -1589,16 +1925,29 @@ select:focus { border-color: var(--tide); }
         </span>
       </div>
       <div class="filter-bar">
-        <div class="search-wrap">
-          <input type="text" class="search-input" id="crm-search" placeholder="Tìm tên khách, số điện thoại, món ưa thích...">
+        <div class="crm-controls-row">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="crm-search" placeholder="🔍 Tìm tên khách, SĐT, món thích...">
+          </div>
+          <div class="crm-sort-wrap">
+            <label for="crm-sort-select" class="crm-sort-label">Sắp xếp:</label>
+            <select id="crm-sort-select" class="crm-sort-select">
+              <option value="totalRev_desc">💰 Chi tiêu: Cao → Thấp</option>
+              <option value="overdue_desc">🔴 Trễ hạn: Lâu nhất</option>
+              <option value="daysSinceLast_desc">⏳ Chưa mua: Lâu nhất</option>
+              <option value="count_desc">📦 Số đơn: Nhiều nhất</option>
+              <option value="avgInterval_asc">⚡ Chu kỳ: Ngắn nhất</option>
+              <option value="name_asc">🔤 Tên khách: A → Z</option>
+            </select>
+          </div>
         </div>
-        <div class="chip-group" id="crm-health-chips">
-          <button class="chip active" data-health="HIGH_RISK">🔴 Nguy cơ mất cao (<span id="chip-count-high">0</span>)</button>
-          <button class="chip" data-health="MILD_RISK">🟡 Trễ hẹn nhẹ (<span id="chip-count-mild">0</span>)</button>
-          <button class="chip" data-health="VIP_AT_RISK">👑 Khách VIP trễ (<span id="chip-count-vip">0</span>)</button>
-          <button class="chip" data-health="HEALTHY">🟢 Đang mua đều (<span id="chip-count-healthy">0</span>)</button>
-          <button class="chip" data-health="DORMANT">⚪ Ngủ đông >60 ngày (<span id="chip-count-dormant">0</span>)</button>
-          <button class="chip" data-health="">Tất cả khách quen (<span id="chip-count-all">0</span>)</button>
+        <div class="chip-group crm-chip-group" id="crm-health-chips">
+          <button class="chip active" data-health="HIGH_RISK">🔴 Nguy cơ cao (<span id="chip-count-high">0</span>)</button>
+          <button class="chip" data-health="MILD_RISK">🟡 Trễ nhẹ (<span id="chip-count-mild">0</span>)</button>
+          <button class="chip" data-health="VIP_AT_RISK">👑 Khách VIP (<span id="chip-count-vip">0</span>)</button>
+          <button class="chip" data-health="HEALTHY">🟢 Mua đều (<span id="chip-count-healthy">0</span>)</button>
+          <button class="chip" data-health="DORMANT">⚪ Ngủ đông (<span id="chip-count-dormant">0</span>)</button>
+          <button class="chip" data-health="">Tất cả (<span id="chip-count-all">0</span>)</button>
         </div>
       </div>
 
@@ -1611,7 +1960,7 @@ select:focus { border-color: var(--tide); }
               <th class="sortable text-right" data-crmsort="totalRev">Tổng chi tiêu</th>
               <th class="sortable text-center" data-crmsort="avgInterval">Chu kỳ thường mua</th>
               <th class="sortable text-center" data-crmsort="daysSinceLast">Chưa mua lại</th>
-              <th class="sortable text-center" data-crmsort="overdue">Độ trễ</th>
+              <th class="text-center crm-col-badge-desktop">Trạng thái</th>
               <th>Món khoái khẩu</th>
               <th class="text-right">Hành động chốt đơn</th>
             </tr>
@@ -3933,31 +4282,54 @@ function renderCrmTable() {
     }
 
     const vipBadge = c.isVip ? '<span class="sev-badge sev-high" style="margin-left:6px; font-size:9.5px; padding:1px 5px;">VIP</span>' : '';
-    const phoneDisplay = c.phone ? `<span style="font-family:var(--font-mono); font-size:11px; color:var(--mist); display:block;">📱 ${esc(c.phone)}</span>` : '';
+    const healthClass = c.health.toLowerCase().replace('_', '-');
 
     return `
-      <tr>
-        <td>
-          <div style="font-weight:600; font-size:13px; color:var(--foam); display:flex; align-items:center;">
-            ${esc(c.name)} ${vipBadge}
+      <tr class="crm-row ${healthClass}">
+        <td class="crm-col-cust">
+          <div class="crm-cust-top">
+            <div class="crm-name-group">
+              <span class="crm-name-txt">${esc(c.name)}</span>
+              ${vipBadge}
+            </div>
+            <div class="crm-badge-mobile">${badgeHtml}</div>
           </div>
-          ${phoneDisplay}
+          <div class="crm-phone-wrap">
+            ${c.phone 
+              ? `<a href="tel:${c.phone}" class="crm-phone-link" title="Bấm để gọi điện">📱 ${esc(c.phone)}</a>` 
+              : '<span class="crm-no-phone">📱 Không có SĐT</span>'}
+          </div>
         </td>
-        <td class="text-right text-mono">${c.count} đơn</td>
-        <td class="text-right money" style="font-weight:700;">${fmt(c.totalRev)}</td>
-        <td class="text-center text-mono" style="color:var(--tide); font-weight:600;">~${c.avgInterval} ngày</td>
-        <td class="text-center text-dim" style="font-size:12px;">
-          <span style="font-family:var(--font-mono); font-weight:600; color:var(--foam);">${Math.floor(c.daysSinceLast)} ngày trước</span>
-          <span style="display:block; font-size:10.5px; color:var(--dim);">${c.lastDate}</span>
+        <td class="crm-col-stat crm-stat-count text-right text-mono">
+          <span class="crm-m-lbl">Số đơn:</span>
+          <span class="crm-m-val">📦 ${c.count} đơn</span>
         </td>
-        <td class="text-center">${badgeHtml}</td>
-        <td style="max-width:140px; font-size:12px;" class="ellipsis" title="${esc(c.topProd)}">
-          🍣 ${esc(c.topProd)}
+        <td class="crm-col-stat crm-stat-rev text-right money">
+          <span class="crm-m-lbl">Tổng chi:</span>
+          <span class="crm-m-val" style="font-weight:700; color:var(--sand);">${fmt(c.totalRev)}</span>
         </td>
-        <td class="text-right" style="white-space:nowrap;">
-          ${c.phone ? `<a href="https://zalo.me/${c.phone}" target="_blank" class="btn-action-zalo" title="Mở Zalo nhắn tin">💬 Zalo</a>` : ''}
-          ${c.phone ? `<a href="tel:${c.phone}" class="btn-action-call" title="Gọi điện">📞</a>` : ''}
-          <button class="btn-action-msg" data-cid="${esc(c.cid)}" title="Mở mẫu tin nhắn chăm sóc">📋 Mẫu tin</button>
+        <td class="crm-col-stat crm-stat-cycle text-center text-mono">
+          <span class="crm-m-lbl">Chu kỳ TB:</span>
+          <span class="crm-m-val" style="color:var(--tide); font-weight:600;">⏱️ ~${c.avgInterval} ngày</span>
+        </td>
+        <td class="crm-col-stat crm-stat-last text-center text-dim">
+          <span class="crm-m-lbl">Chưa mua:</span>
+          <span class="crm-m-val">
+            <span style="font-family:var(--font-mono); font-weight:600; color:var(--foam);">⏳ ${Math.floor(c.daysSinceLast)} ngày</span>
+            <span class="crm-date-sub" style="display:block; font-size:10px; color:var(--dim);">${c.lastDate}</span>
+          </span>
+        </td>
+        <td class="crm-col-badge-desktop text-center">${badgeHtml}</td>
+        <td class="crm-col-prod" title="${esc(c.topProd)}">
+          <span class="crm-m-lbl">Món khoái khẩu:</span>
+          <div class="crm-prod-badge">🍣 <span>${esc(c.topProd)}</span></div>
+        </td>
+        <td class="crm-col-actions text-right">
+          <div class="crm-actions-bar">
+            ${c.phone ? `<a href="https://zalo.me/${c.phone}" target="_blank" class="btn-action-zalo" title="Mở Zalo nhắn tin">💬 Zalo</a>` : ''}
+            ${c.phone ? `<a href="tel:${c.phone}" class="btn-action-call" title="Bấm gọi điện">📞 Gọi</a>` : ''}
+            <button class="btn-action-msg" data-cid="${esc(c.cid)}" title="Mở mẫu tin nhắn chăm sóc">📋 Mẫu tin</button>
+          </div>
         </td>
       </tr>
     `;
@@ -4036,6 +4408,25 @@ document.getElementById('crm-search').addEventListener('input', (e) => {
   renderCrmTable();
 });
 
+const crmSortSelect = document.getElementById('crm-sort-select');
+if (crmSortSelect) {
+  crmSortSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    const parts = val.split('_');
+    crmFilterState.sortKey = parts[0];
+    crmFilterState.sortDir = parts[1];
+
+    document.querySelectorAll('#view-crm thead th.sortable').forEach(h => {
+      h.classList.remove('sort-active', 'sort-asc', 'sort-desc');
+      if (h.dataset.crmsort === crmFilterState.sortKey) {
+        h.classList.add('sort-active', crmFilterState.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      }
+    });
+
+    renderCrmTable();
+  });
+}
+
 document.querySelectorAll('#view-crm thead th.sortable').forEach(th => {
   th.addEventListener('click', () => {
     const key = th.dataset.crmsort;
@@ -4049,6 +4440,14 @@ document.querySelectorAll('#view-crm thead th.sortable').forEach(th => {
       h.classList.remove('sort-active', 'sort-asc', 'sort-desc');
     });
     th.classList.add('sort-active', crmFilterState.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+    if (crmSortSelect) {
+      const matchOpt = `${crmFilterState.sortKey}_${crmFilterState.sortDir}`;
+      if (Array.from(crmSortSelect.options).some(o => o.value === matchOpt)) {
+        crmSortSelect.value = matchOpt;
+      }
+    }
+
     renderCrmTable();
   });
 });
