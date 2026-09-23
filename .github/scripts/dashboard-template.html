@@ -785,7 +785,7 @@ nav.tabs::-webkit-scrollbar { display: none; }
 
 .velocity-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 .velocity-card {
@@ -797,6 +797,8 @@ nav.tabs::-webkit-scrollbar { display: none; }
   position: relative;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   min-height: 275px;
+  min-width: 0;
+  overflow: hidden;
 }
 .velocity-card:hover {
   transform: translateY(-2px);
@@ -937,7 +939,19 @@ nav.tabs::-webkit-scrollbar { display: none; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  gap: 6px;
+  min-width: 0;
+}
+.velocity-target-line span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.velocity-target-line b {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .velocity-track {
   width: 100%;
@@ -945,8 +959,10 @@ nav.tabs::-webkit-scrollbar { display: none; }
   background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   border: 1px solid rgba(255, 255, 255, 0.04);
+  clear: both;
+  position: relative;
 }
 .velocity-fill {
   height: 100%;
@@ -960,6 +976,13 @@ nav.tabs::-webkit-scrollbar { display: none; }
   font-size: 10px;
   color: #64748b;
   margin-bottom: 9px;
+  white-space: nowrap;
+  gap: 4px;
+  min-width: 0;
+}
+.velocity-scale-row span {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .scale-highlight-green { color: #34d399; font-weight: 600; }
 .scale-highlight-red { color: #fb7185; font-weight: 600; }
@@ -2420,7 +2443,7 @@ select:focus { border-color: var(--tide); }
             <div class="velocity-card-sub">(<span id="v-sub-repeat-rev">338M</span> / <span id="v-sub-total-rev">400M</span>)</div>
             <div class="velocity-target-line">
               <span>Ngưỡng an toàn:</span>
-              <b style="color:var(--kelp);">≥ 75%</b>
+              <b style="color:var(--kelp); white-space:nowrap; flex-shrink:0;">≥&nbsp;75%</b>
             </div>
             <div class="velocity-track">
               <div class="velocity-fill" id="v-fill-repeat" style="width: 93%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
@@ -2452,7 +2475,7 @@ select:focus { border-color: var(--tide); }
             <div class="velocity-card-sub">(<span id="v-sub-p1-rev">48.2M</span> rủi ro)</div>
             <div class="velocity-target-line">
               <span>Ngưỡng cảnh báo:</span>
-              <b style="color:#f43f5e;">≤ 25 khách</b>
+              <b style="color:#f43f5e; white-space:nowrap; flex-shrink:0;">≤&nbsp;25&nbsp;khách</b>
             </div>
             <div class="velocity-track" style="background: rgba(244,63,94,0.15);">
               <div class="velocity-fill" id="v-fill-p1" style="width: 80%; background: linear-gradient(90deg, #f43f5e, #fb7185);"></div>
@@ -2488,7 +2511,7 @@ select:focus { border-color: var(--tide); }
             <div class="velocity-card-sub">(~2 tuần/lần)</div>
             <div class="velocity-target-line">
               <span>Chuẩn tự nhiên:</span>
-              <b style="color:var(--tide);">12 – 15 ngày</b>
+              <b style="color:var(--tide); white-space:nowrap; flex-shrink:0;">12&nbsp;–&nbsp;15&nbsp;ngày</b>
             </div>
             <div class="velocity-track" style="background: rgba(56,189,248,0.12);">
               <div class="velocity-fill" id="v-fill-cycle" style="width: 92%; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
@@ -2521,7 +2544,7 @@ select:focus { border-color: var(--tide); }
             <div class="velocity-card-sub">(Mục tiêu 210K)</div>
             <div class="velocity-target-line">
               <span>Mục tiêu tối ưu:</span>
-              <b style="color:var(--sand);">≥ 210.000đ</b>
+              <b style="color:var(--sand); white-space:nowrap; flex-shrink:0;">≥&nbsp;210.000đ</b>
             </div>
             <div class="velocity-track" style="background: rgba(245,158,11,0.12);">
               <div class="velocity-fill" id="v-fill-aov" style="width: 91%; background: linear-gradient(90deg, #d97706, #fbbf24);"></div>
@@ -2552,14 +2575,15 @@ select:focus { border-color: var(--tide); }
             <div class="velocity-card-sub">(<span id="v-sub-wk-rev">216M</span> / 3 ngày)</div>
             <div class="velocity-target-line">
               <span>Chuẩn ngành:</span>
-              <b style="color:#c084fc;">50% – 60%</b>
+              <b style="color:#c084fc; white-space:nowrap; flex-shrink:0;">50%&nbsp;–&nbsp;60%</b>
             </div>
-            <div class="velocity-track" style="background: rgba(168,85,247,0.15);">
-              <div class="velocity-fill" id="v-fill-weekend" style="width: 90%; background: linear-gradient(90deg, #9333ea, #c084fc);"></div>
+            <div class="velocity-track" style="display:flex; background:rgba(255,255,255,0.06); padding:0; overflow:hidden;">
+              <div id="v-bar-weekday" style="width: 46%; height:100%; background:rgba(148,163,184,0.22); border-radius:999px 0 0 999px; transition:width .5s ease;"></div>
+              <div id="v-fill-weekend" style="width: 54%; height:100%; background:linear-gradient(90deg, #9333ea, #c084fc); border-radius:0 999px 999px 0; transition:width .5s ease;"></div>
             </div>
             <div class="velocity-scale-row">
-              <span id="v-scale-wk-left">T2-T5: 46.0%</span>
-              <span class="scale-highlight-purple">T6-CN Cân đối</span>
+              <span id="v-scale-wk-left" style="white-space:nowrap; flex-shrink:0;">T2-T5: 46.0%</span>
+              <span class="scale-highlight-purple" style="white-space:nowrap; flex-shrink:0;">T6-CN Cân đối</span>
             </div>
           </div>
           <div class="velocity-action-text action-purple" id="v-action-weekend">
@@ -4976,10 +5000,14 @@ function initCustomerCycleAnalysis() {
   if (elValWeekend) elValWeekend.textContent = `${wkRevPct}%`;
   const elSubWkRev = document.getElementById('v-sub-wk-rev');
   if (elSubWkRev) elSubWkRev.textContent = fmtK(wkRev);
+  const wkPctNum = parseFloat(wkRevPct) || 54;
+  const wdPctNum = Math.max(0, parseFloat((100 - wkPctNum).toFixed(1)));
+  const elBarWeekday = document.getElementById('v-bar-weekday');
+  if (elBarWeekday) elBarWeekday.style.width = `${wdPctNum}%`;
   const elFillWeekend = document.getElementById('v-fill-weekend');
-  if (elFillWeekend) elFillWeekend.style.width = `${Math.min(100, Math.max(15, (wkRevPct / 65) * 100))}%`;
+  if (elFillWeekend) elFillWeekend.style.width = `${wkPctNum}%`;
   const elScaleWkLeft = document.getElementById('v-scale-wk-left');
-  if (elScaleWkLeft) elScaleWkLeft.textContent = `T2-T5: ${(100 - wkRevPct).toFixed(1)}%`;
+  if (elScaleWkLeft) elScaleWkLeft.textContent = `T2-T5: ${wdPctNum}%`;
 
   // ══════ UPDATE TOP STATUS PULSE BAR ══════
   const elTopHealth = document.getElementById('top-status-health');
