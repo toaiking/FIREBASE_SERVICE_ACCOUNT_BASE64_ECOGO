@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -264,6 +264,195 @@ nav.tabs::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 640px) {
   .weekend-summary-bar { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PEAK HOURS HEATMAP (24x7)
+   ════════════════════════════════════════════════════════════ */
+.hm-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.hm-stat-card {
+  background: var(--depth);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color .15s;
+}
+.hm-stat-card:hover { border-color: var(--dim); }
+.hm-stat-icon { font-size: 20px; flex-shrink: 0; }
+.hm-stat-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--dim);
+  font-weight: 700;
+}
+.hm-stat-val {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--foam);
+  margin-top: 1px;
+}
+.hm-stat-sub {
+  font-size: 11px;
+  color: var(--mist);
+  margin-top: 1px;
+}
+
+.hm-scroll-wrap {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.hm-grid-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  min-width: 920px;
+}
+.hm-th-day {
+  font-size: 11px;
+  color: var(--dim);
+  text-align: left;
+  padding: 6px 8px;
+  width: 95px;
+}
+.hm-th-hour {
+  font-size: 10px;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  text-align: center;
+  padding: 4px 1px;
+}
+.hm-th-hour.hm-col-peak {
+  color: var(--sand);
+  font-weight: 700;
+}
+.hm-th-tot {
+  font-size: 10.5px;
+  color: var(--dim);
+  text-align: right;
+  padding: 4px 8px;
+  font-weight: 700;
+  width: 75px;
+}
+.hm-td-day {
+  font-size: 11.5px;
+  color: var(--mist);
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 2px 8px;
+}
+.hm-td-day.hm-day-wk {
+  color: var(--sand);
+}
+.hm-cell-wrap {
+  padding: 0;
+  text-align: center;
+}
+.hm-cell {
+  height: 28px;
+  min-width: 30px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+  user-select: none;
+}
+.hm-cell:hover {
+  transform: scale(1.22);
+  z-index: 50;
+  position: relative;
+  outline: 1.5px solid var(--foam);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+}
+.hm-cell.hm-cell-peak {
+  animation: pulse-peak 2s infinite alternate;
+}
+@keyframes pulse-peak {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); box-shadow: 0 0 12px rgba(251,113,133,0.7); }
+}
+.hm-td-tot {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mist);
+  text-align: right;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.hm-tr-foot td {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.hm-td-col-tot {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--dim);
+  text-align: center;
+  padding: 4px 1px;
+}
+.hm-td-col-tot.hm-col-peak {
+  color: var(--sand);
+  font-weight: 700;
+}
+.hm-grand-tot {
+  color: var(--tide);
+  font-weight: 700;
+}
+
+.hm-footer {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hm-legend-label {
+  font-size: 11px;
+  color: var(--dim);
+}
+.hm-legend-gradient {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hm-legend-stop {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+.hm-legend-note {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+@media (max-width: 980px) {
+  .hm-summary-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .hm-summary-bar { grid-template-columns: 1fr; }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -680,6 +869,38 @@ select:focus { border-color: var(--tide); }
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Phương thức thanh toán</span></div>
         <div class="panel-body"><div class="chart-box sm"><canvas id="chartPayment"></canvas></div></div>
+      </div>
+    </div>
+
+    <p class="eyebrow">Giờ cao điểm &amp; Mật độ đặt hàng</p>
+    <div class="panel" id="panel-heatmap">
+      <div class="panel-head">
+        <span class="panel-title">Mật độ đặt hàng theo Giờ &amp; Thứ trong tuần (Heatmap 24x7)
+          <span class="sub">168 khung giờ phân bổ đơn hàng · Tối ưu ca trực chốt đơn &amp; giao hàng</span>
+        </span>
+        <div class="chip-group" id="heatmap-mode-chips">
+          <button class="chip active" data-hm-mode="count">📦 Số lượng đơn</button>
+          <button class="chip" data-hm-mode="revenue">💰 Doanh thu</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding: 14px 18px 18px;">
+        <div class="hm-summary-bar" id="hm-summary-bar"></div>
+        <div class="hm-scroll-wrap">
+          <div class="hm-table" id="heatmap-table"></div>
+        </div>
+        <div class="hm-footer">
+          <div class="hm-legend">
+            <span class="hm-legend-label">Mức độ hoạt động:</span>
+            <div class="hm-legend-gradient">
+              <span class="hm-legend-stop" style="background: rgba(255,255,255,0.03); border:1px solid var(--line-soft)">0</span>
+              <span class="hm-legend-stop" style="background: rgba(45, 212, 191, 0.25); color:var(--foam)">Thấp</span>
+              <span class="hm-legend-stop" style="background: rgba(45, 212, 191, 0.55); color:var(--foam)">Trung bình</span>
+              <span class="hm-legend-stop" style="background: rgba(251, 191, 36, 0.85); color:#000">Cao</span>
+              <span class="hm-legend-stop" style="background: linear-gradient(135deg, #fb923c, #fb7185); color:#fff; font-weight:700">Đỉnh điểm (Giờ vàng)</span>
+            </div>
+          </div>
+          <span class="hm-legend-note">💡 Nhấn hoặc rê chuột vào ô bất kỳ để xem chi tiết số đơn &amp; doanh thu</span>
+        </div>
       </div>
     </div>
 
@@ -1164,6 +1385,7 @@ function applyDateFilter(key, customFrom, customTo) {
   // Update UI components
   renderKpis();
   renderCharts();
+  renderHeatmap();
   renderProductsBars();
   renderCustomersBars();
   renderBatchesOverview();
@@ -1304,7 +1526,7 @@ function renderCharts() {
   if (chartDailyInstance) chartDailyInstance.destroy();
 
   if (timeViewMode === 'daily') {
-    document.getElementById('time-chart-title').innerHTML = `Doanh thu theo ngày <span class="sub">🟨 Cuối tuần (T7, CN) · 🟦 Ngày thường · 🟥 Đường TB ngày (${fmtK(avgDaily)})</span>`;
+    document.getElementById('time-chart-title').innerHTML = `Doanh thu theo ngày <span class="sub">🟨 Cuối tuần · 🟦 Ngày thường · 🔷 MA7 (Xu hướng 7 ngày) · 🟥 TB (${fmtK(avgDaily)})</span>`;
 
     const labels = dailyKeys.map(k => {
       const item = dailyMap[k];
@@ -1314,6 +1536,20 @@ function renderCharts() {
     const revData = dailyKeys.map(k => dailyMap[k].total);
     const bgColors = dailyKeys.map(k => dailyMap[k].isWk ? 'rgba(251, 191, 36, 0.85)' : 'rgba(45, 212, 191, 0.45)');
     const borderColors = dailyKeys.map(k => dailyMap[k].isWk ? '#fbbf24' : '#2dd4bf');
+
+    // Tính toán đường trung bình trượt 7 ngày (MA7)
+    const ma7Data = dailyKeys.map((k, i) => {
+      const currentTs = new Date(k + 'T12:00:00').getTime();
+      const start7Ts = currentTs - 6 * 86400000;
+      let sum7 = 0;
+      for (let j = 0; j <= i; j++) {
+        const dTs = new Date(dailyKeys[j] + 'T12:00:00').getTime();
+        if (dTs >= start7Ts && dTs <= currentTs) {
+          sum7 += dailyMap[dailyKeys[j]].total;
+        }
+      }
+      return Math.round(sum7 / 7);
+    });
 
     chartDailyInstance = new Chart(document.getElementById('chartDaily'), {
       type: 'bar',
@@ -1329,7 +1565,20 @@ function renderCharts() {
             borderWidth: 1.5,
             borderRadius: 3,
             maxBarThickness: 14,
-            order: 2
+            order: 3
+          },
+          {
+            type: 'line',
+            label: '📈 MA7 (Xu hướng 7 ngày)',
+            data: ma7Data.length ? ma7Data : [0],
+            borderColor: '#38bdf8',
+            backgroundColor: 'transparent',
+            borderWidth: 2.5,
+            tension: 0.35,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#38bdf8',
+            order: 1
           },
           {
             type: 'line',
@@ -1341,7 +1590,7 @@ function renderCharts() {
             borderDash: [5, 4],
             pointRadius: 0,
             pointHoverRadius: 4,
-            order: 1
+            order: 2
           }
         ]
       },
@@ -1351,7 +1600,7 @@ function renderCharts() {
           legend: {
             display: true, position: 'top', align: 'end',
             labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8,
-              filter: (item) => item.text.includes('Trung bình')
+              filter: (item) => item.text.includes('Trung bình') || item.text.includes('MA7')
             }
           },
           tooltip: {
@@ -1366,6 +1615,9 @@ function renderCharts() {
                 return `${item.dowFull}, ${fmtDate(d.getTime())} · ${badge}`;
               },
               label: (c) => {
+                if (c.dataset.label && c.dataset.label.includes('MA7')) {
+                  return `🔷 MA7 (Xu hướng 7 ngày): ${fmt(c.raw)} / ngày`;
+                }
                 if (c.dataset.type === 'line') return `📊 Giá trị Trung bình: ${fmt(c.raw)}`;
                 const idx = c.dataIndex;
                 const k = dailyKeys[idx];
@@ -1645,6 +1897,191 @@ document.querySelectorAll('#customers-sort-chips .chip').forEach(chip => {
     chip.classList.add('active');
     customersSortKey = chip.dataset.sort;
     renderCustomersBars();
+  });
+});
+
+/* ════════════════ PEAK HOURS HEATMAP (24x7) ════════════════ */
+let heatmapMode = 'count'; // 'count' | 'revenue'
+
+function renderHeatmap() {
+  const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
+  
+  // DOW Labels: T2 -> CN
+  const DOW_LABELS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+
+  // Matrix: 7 rows x 24 cols
+  const matrix = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ count: 0, revenue: 0 })));
+  const rowTotals = Array.from({ length: 7 }, () => ({ count: 0, revenue: 0 }));
+  const colTotals = Array.from({ length: 24 }, () => ({ count: 0, revenue: 0 }));
+
+  let totalCount = 0;
+  let totalRev = 0;
+
+  for (const o of active) {
+    const t = getOrderTs(o);
+    if (!t) continue;
+    const d = new Date(t);
+    const jsDow = d.getDay(); // 0=CN, 1=T2, ..., 6=T7
+    const rowIdx = jsDow === 0 ? 6 : jsDow - 1; // 0=T2, ..., 6=CN
+    const h = d.getHours();
+    const price = o.totalPrice || 0;
+
+    matrix[rowIdx][h].count += 1;
+    matrix[rowIdx][h].revenue += price;
+
+    rowTotals[rowIdx].count += 1;
+    rowTotals[rowIdx].revenue += price;
+
+    colTotals[h].count += 1;
+    colTotals[h].revenue += price;
+
+    totalCount += 1;
+    totalRev += price;
+  }
+
+  // Find peak cell, peak day, peak hour
+  let peakCell = { row: 0, col: 0, count: 0, revenue: 0 };
+  let peakDayIdx = 0;
+  let peakHour = 0;
+
+  for (let r = 0; r < 7; r++) {
+    if (rowTotals[r].count > rowTotals[peakDayIdx].count) peakDayIdx = r;
+    for (let c = 0; c < 24; c++) {
+      const cellVal = heatmapMode === 'count' ? matrix[r][c].count : matrix[r][c].revenue;
+      const peakVal = heatmapMode === 'count' ? peakCell.count : peakCell.revenue;
+      if (cellVal > peakVal) {
+        peakCell = { row: r, col: c, count: matrix[r][c].count, revenue: matrix[r][c].revenue };
+      }
+    }
+  }
+
+  for (let c = 0; c < 24; c++) {
+    if (colTotals[c].count > colTotals[peakHour].count) peakHour = c;
+  }
+
+  // Time shifts calculation: Sáng (6h-11h), Chiều (12h-17h), Tối (18h-23h), Đêm (0h-5h)
+  let nightCount = 0, morningCount = 0, afternoonCount = 0, eveningCount = 0;
+  for (let c = 0; c < 24; c++) {
+    const cnt = colTotals[c].count;
+    if (c >= 0 && c < 6) nightCount += cnt;
+    else if (c >= 6 && c < 12) morningCount += cnt;
+    else if (c >= 12 && c < 18) afternoonCount += cnt;
+    else eveningCount += cnt;
+  }
+
+  const eveningPct = totalCount > 0 ? ((eveningCount / totalCount) * 100).toFixed(1) : 0;
+  const afternoonPct = totalCount > 0 ? ((afternoonCount / totalCount) * 100).toFixed(1) : 0;
+  const peakDayPct = totalCount > 0 ? ((rowTotals[peakDayIdx].count / totalCount) * 100).toFixed(1) : 0;
+
+  // Render Summary Badges
+  const summaryEl = document.getElementById('hm-summary-bar');
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <div class="hm-stat-card" style="border-left: 3px solid var(--coral)">
+        <span class="hm-stat-icon">🔥</span>
+        <div>
+          <div class="hm-stat-label">Khung giờ Đỉnh điểm</div>
+          <div class="hm-stat-val">${DOW_LABELS[peakCell.row]} lúc ${String(peakCell.col).padStart(2,'0')}:00</div>
+          <div class="hm-stat-sub">${peakCell.count.toLocaleString('vi-VN')} đơn · ${fmt(peakCell.revenue)}</div>
+        </div>
+      </div>
+      <div class="hm-stat-card" style="border-left: 3px solid var(--sand)">
+        <span class="hm-stat-icon">📅</span>
+        <div>
+          <div class="hm-stat-label">Ngày nhộn nhịp nhất</div>
+          <div class="hm-stat-val">${DOW_LABELS[peakDayIdx]}</div>
+          <div class="hm-stat-sub">${rowTotals[peakDayIdx].count.toLocaleString('vi-VN')} đơn (${peakDayPct}%) · ${fmtK(rowTotals[peakDayIdx].revenue)}</div>
+        </div>
+      </div>
+      <div class="hm-stat-card" style="border-left: 3px solid var(--current)">
+        <span class="hm-stat-icon">⏰</span>
+        <div>
+          <div class="hm-stat-label">Giờ gom đơn nhiều nhất</div>
+          <div class="hm-stat-val">${String(peakHour).padStart(2,'0')}:00 - ${String(peakHour).padStart(2,'0')}:59</div>
+          <div class="hm-stat-sub">${colTotals[peakHour].count.toLocaleString('vi-VN')} đơn toàn kỳ</div>
+        </div>
+      </div>
+      <div class="hm-stat-card" style="border-left: 3px solid var(--kelp)">
+        <span class="hm-stat-icon">🌙</span>
+        <div>
+          <div class="hm-stat-label">Ca chiều &amp; tối chốt đơn</div>
+          <div class="hm-stat-val">${(afternoonCount + eveningCount).toLocaleString('vi-VN')} đơn</div>
+          <div class="hm-stat-sub">12h - 23h chiếm ${(+afternoonPct + +eveningPct).toFixed(1)}% toàn bộ đơn</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Max value for cell coloring
+  const maxVal = Math.max(heatmapMode === 'count' ? peakCell.count : peakCell.revenue, 1);
+
+  // Helper color scale
+  function getCellColor(val) {
+    if (val === 0) return { bg: 'rgba(255,255,255,0.02)', color: 'var(--dim)', border: 'transparent' };
+    const ratio = val / maxVal;
+    if (ratio < 0.15) return { bg: 'rgba(45, 212, 191, 0.16)', color: 'var(--mist)', border: 'rgba(45,212,191,0.2)' };
+    if (ratio < 0.40) return { bg: 'rgba(45, 212, 191, 0.45)', color: 'var(--foam)', border: 'rgba(45,212,191,0.5)' };
+    if (ratio < 0.70) return { bg: 'rgba(251, 191, 36, 0.85)', color: '#060a10', border: '#fbbf24', fontBold: true };
+    return { bg: 'linear-gradient(135deg, #fb923c, #fb7185)', color: '#fff', border: '#fb7185', fontBold: true, shadow: '0 0 10px rgba(251,113,133,0.5)' };
+  }
+
+  // Render Table
+  let html = '<table class="hm-grid-table">';
+  html += '<thead><tr><th class="hm-th-day">Thứ / Giờ</th>';
+  for (let c = 0; c < 24; c++) {
+    html += `<th class="hm-th-hour ${c === peakHour ? 'hm-col-peak' : ''}">${String(c).padStart(2, '0')}h</th>`;
+  }
+  html += '<th class="hm-th-tot">Tổng ngày</th></tr></thead><tbody>';
+
+  // 7 Rows
+  for (let r = 0; r < 7; r++) {
+    const isWk = (r === 5 || r === 6); // T7 or CN
+    html += `<tr><td class="hm-td-day ${isWk ? 'hm-day-wk' : ''}">${DOW_LABELS[r]} ${isWk ? '<span style="color:var(--sand)">★</span>' : ''}</td>`;
+    for (let c = 0; c < 24; c++) {
+      const cell = matrix[r][c];
+      const val = heatmapMode === 'count' ? cell.count : cell.revenue;
+      const style = getCellColor(val);
+      const isPeak = (r === peakCell.row && c === peakCell.col && val > 0);
+      const displayVal = val === 0 ? '' : (heatmapMode === 'count' ? val : fmtK(val));
+      const rowTotalVal = heatmapMode === 'count' ? rowTotals[r].count : rowTotals[r].revenue;
+      const share = rowTotalVal > 0 ? ((val / rowTotalVal) * 100).toFixed(1) : 0;
+
+      const tooltipText = `${DOW_LABELS[r]}, ${String(c).padStart(2,'0')}:00 - ${String(c).padStart(2,'0')}:59&#10;• Số đơn: ${cell.count.toLocaleString('vi-VN')} đơn (${share}% trong ngày)&#10;• Doanh thu: ${fmt(cell.revenue)}${isPeak ? '&#10;🔥 KHUNG GIỜ CAO ĐIỂM NHẤT!' : ''}`;
+
+      html += `<td class="hm-cell-wrap">
+        <div class="hm-cell ${isPeak ? 'hm-cell-peak' : ''}"
+             data-r="${r}" data-c="${c}"
+             title="${tooltipText}"
+             style="background:${style.bg}; color:${style.color}; border:1px solid ${style.border}; ${style.shadow ? `box-shadow:${style.shadow};` : ''} ${style.fontBold ? 'font-weight:700;' : ''}">
+          ${displayVal}
+        </div>
+      </td>`;
+    }
+    const rowTot = heatmapMode === 'count' ? rowTotals[r].count.toLocaleString('vi-VN') : fmtK(rowTotals[r].revenue);
+    html += `<td class="hm-td-tot">${rowTot}</td></tr>`;
+  }
+
+  // Footer Row: Hourly totals
+  html += '<tfoot><tr class="hm-tr-foot"><td class="hm-td-day">Tổng giờ</td>';
+  for (let c = 0; c < 24; c++) {
+    const colTot = heatmapMode === 'count' ? colTotals[c].count.toLocaleString('vi-VN') : fmtK(colTotals[c].revenue);
+    html += `<td class="hm-td-col-tot ${c === peakHour ? 'hm-col-peak' : ''}">${colTot}</td>`;
+  }
+  const grandTot = heatmapMode === 'count' ? totalCount.toLocaleString('vi-VN') : fmtK(totalRev);
+  html += `<td class="hm-td-tot hm-grand-tot">${grandTot}</td></tr></tfoot>`;
+  html += '</tbody></table>';
+
+  const tableEl = document.getElementById('heatmap-table');
+  if (tableEl) tableEl.innerHTML = html;
+}
+
+// Toggle nút xem Đơn hàng / Doanh thu của Heatmap
+document.querySelectorAll('#heatmap-mode-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#heatmap-mode-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    heatmapMode = chip.dataset.hmMode;
+    renderHeatmap();
   });
 });
 
