@@ -550,6 +550,166 @@ nav.tabs::-webkit-scrollbar { display: none; }
 .crm-msg-textarea:focus { border-color: var(--tide); }
 .crm-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* Customer Priority Badges */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.p-p1 {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+}
+.p-p2 {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+.p-p3 {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.p-p4 {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Customer Orders Drawer & Timeline Styles */
+.crm-drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(6,10,16,.75);
+  backdrop-filter: blur(3px);
+  z-index: 1040; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.crm-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.crm-customer-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(580px, 100vw);
+  background: var(--depth); border-left: 1px solid var(--line);
+  box-shadow: -20px 0 60px rgba(0,0,0,0.6);
+  z-index: 1050; display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.crm-customer-drawer.open { transform: translateX(0); }
+
+.crm-drawer-head {
+  padding: 16px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; flex-shrink: 0;
+}
+.crm-drawer-head-info { min-width: 0; flex: 1; }
+.crm-drawer-name-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.crm-drawer-name { font-size: 16px; font-weight: 700; color: var(--foam); }
+.crm-drawer-contact {
+  display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--mist); flex-wrap: wrap;
+}
+.crm-drawer-contact a {
+  color: var(--tide); text-decoration: none; font-family: var(--font-mono);
+  font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+}
+.crm-drawer-contact a:hover { text-decoration: underline; }
+.crm-drawer-close {
+  background: var(--surface-2); border: 1px solid var(--line);
+  width: 32px; height: 32px; border-radius: 8px; color: var(--mist);
+  font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s;
+}
+.crm-drawer-close:hover { background: var(--line); color: var(--foam); }
+
+.crm-drawer-body {
+  flex: 1; overflow-y: auto; padding: 16px 20px 30px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.crm-drawer-summary-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.crm-drawer-kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+}
+.crm-drawer-kpi-item {
+  background: var(--depth); border: 1px solid var(--line-soft);
+  border-radius: 6px; padding: 8px 10px; text-align: center;
+}
+.crm-drawer-kpi-lbl { font-size: 10px; color: var(--mist); margin-bottom: 2px; }
+.crm-drawer-kpi-val {
+  font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--foam);
+}
+.crm-drawer-actions-bar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.crm-order-timeline { display: flex; flex-direction: column; gap: 12px; }
+.crm-order-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 14px;
+  transition: border-color .15s ease;
+}
+.crm-order-card:hover { border-color: var(--tide); }
+.crm-order-header {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; margin-bottom: 8px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;
+}
+.crm-order-code {
+  font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--tide);
+}
+.crm-order-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.crm-order-tag {
+  font-size: 10.5px; font-weight: 600; padding: 2px 7px;
+  border-radius: 4px; font-family: var(--font-mono);
+}
+.tag-newest {
+  background: rgba(45, 212, 191, 0.15); color: var(--kelp);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+.tag-interval {
+  background: rgba(56, 189, 248, 0.15); color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.tag-first {
+  background: rgba(148, 163, 184, 0.15); color: var(--mist);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+.crm-order-meta {
+  font-size: 11.5px; color: var(--mist); margin-bottom: 10px; line-height: 1.5;
+}
+.crm-order-items-table {
+  width: 100%; border-collapse: collapse; font-size: 11.5px; margin-bottom: 8px;
+}
+.crm-order-items-table th {
+  text-align: left; padding: 4px 6px; color: var(--dim);
+  border-bottom: 1px solid var(--line); font-weight: 600; font-size: 10.5px;
+}
+.crm-order-items-table td {
+  padding: 5px 6px; border-bottom: 1px solid var(--line-soft);
+}
+.crm-order-total-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 6px; font-size: 12.5px; font-weight: 700;
+}
+.crm-order-total-amount {
+  color: var(--sand); font-family: var(--font-mono); font-size: 14px;
+}
+
+#view-crm tbody tr.crm-row {
+  cursor: pointer;
+}
+#view-crm tbody tr.crm-row:hover {
+  background: rgba(45, 212, 191, 0.05);
+}
+
 /* ════════════════════════════════════════════════════════════
    PEAK HOURS HEATMAP (24x7)
    ════════════════════════════════════════════════════════════ */
@@ -1523,6 +1683,17 @@ select:focus { border-color: var(--tide); }
     display: inline-flex !important;
     align-items: center !important;
   }
+
+  /* Customer Drawer on mobile */
+  .crm-customer-drawer {
+    width: 100vw;
+  }
+  .crm-drawer-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .crm-order-card {
+    padding: 10px 12px;
+  }
 }
 
 /* Extra Small Phones (<= 380px) */
@@ -1921,7 +2092,7 @@ select:focus { border-color: var(--tide); }
     <div class="panel">
       <div class="panel-head">
         <span class="panel-title">Danh sách Khách quen Cần Kiểm soát &amp; Chăm sóc
-          <span class="sub" id="crm-table-count">Đang hiển thị 0 khách</span>
+          <span class="sub" id="crm-table-count">Đang hiển thị 0 khách · Bấm vào khách hàng để xem chi tiết lịch sử đơn</span>
         </span>
       </div>
       <div class="filter-bar">
@@ -1932,6 +2103,7 @@ select:focus { border-color: var(--tide); }
           <div class="crm-sort-wrap">
             <label for="crm-sort-select" class="crm-sort-label">Sắp xếp:</label>
             <select id="crm-sort-select" class="crm-sort-select">
+              <option value="priority_desc">⭐ Độ ưu tiên CSKH: Cao → Thấp</option>
               <option value="totalRev_desc">💰 Chi tiêu: Cao → Thấp</option>
               <option value="overdue_desc">🔴 Trễ hạn: Lâu nhất</option>
               <option value="daysSinceLast_desc">⏳ Chưa mua: Lâu nhất</option>
@@ -1942,7 +2114,8 @@ select:focus { border-color: var(--tide); }
           </div>
         </div>
         <div class="chip-group crm-chip-group" id="crm-health-chips">
-          <button class="chip active" data-health="HIGH_RISK">🔴 Nguy cơ cao (<span id="chip-count-high">0</span>)</button>
+          <button class="chip active" data-health="P1">⚡ P1 Khẩn cấp (<span id="chip-count-p1">0</span>)</button>
+          <button class="chip" data-health="HIGH_RISK">🔴 Nguy cơ cao (<span id="chip-count-high">0</span>)</button>
           <button class="chip" data-health="MILD_RISK">🟡 Trễ nhẹ (<span id="chip-count-mild">0</span>)</button>
           <button class="chip" data-health="VIP_AT_RISK">👑 Khách VIP (<span id="chip-count-vip">0</span>)</button>
           <button class="chip" data-health="HEALTHY">🟢 Mua đều (<span id="chip-count-healthy">0</span>)</button>
@@ -1956,11 +2129,12 @@ select:focus { border-color: var(--tide); }
           <thead>
             <tr>
               <th class="sortable" data-crmsort="name">Khách hàng</th>
+              <th class="sortable text-center sort-active sort-desc" data-crmsort="priority">Ưu tiên</th>
               <th class="sortable text-right" data-crmsort="count">Số đơn</th>
               <th class="sortable text-right" data-crmsort="totalRev">Tổng chi tiêu</th>
               <th class="sortable text-center" data-crmsort="avgInterval">Chu kỳ thường mua</th>
               <th class="sortable text-center" data-crmsort="daysSinceLast">Chưa mua lại</th>
-              <th class="text-center crm-col-badge-desktop">Trạng thái</th>
+              <th class="sortable text-center crm-col-badge-desktop" data-crmsort="overdue">Trạng thái hạn</th>
               <th>Món khoái khẩu</th>
               <th class="text-right">Hành động chốt đơn</th>
             </tr>
@@ -2155,6 +2329,25 @@ select:focus { border-color: var(--tide); }
     <button class="drawer-close" id="drawer-close">✕</button>
   </div>
   <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- CRM Customer Orders History Drawer -->
+<div class="crm-drawer-backdrop" id="crm-drawer-backdrop"></div>
+<div class="crm-customer-drawer" id="crm-customer-drawer">
+  <div class="crm-drawer-head">
+    <div class="crm-drawer-head-info">
+      <div class="crm-drawer-name-row">
+        <span class="crm-drawer-name" id="crm-drawer-cust-name">—</span>
+        <span id="crm-drawer-priority-badge"></span>
+        <span id="crm-drawer-health-badge"></span>
+      </div>
+      <div class="crm-drawer-contact">
+        <span id="crm-drawer-phone-wrap">—</span>
+      </div>
+    </div>
+    <button class="crm-drawer-close" id="crm-drawer-close-btn" title="Đóng">✕</button>
+  </div>
+  <div class="crm-drawer-body" id="crm-drawer-body"></div>
 </div>
 
 <!-- Modal Mẫu Tin Nhắn Chăm Sóc Zalo -->
@@ -3976,7 +4169,7 @@ function exportCustomerCycleExcel() {
     return;
   }
   const rows = [
-    ['Tên khách hàng', 'Số điện thoại', 'Hạng VIP', 'Số đơn đã mua', 'Tổng chi tiêu (VNĐ)', 'Chu kỳ thường mua (ngày)', 'Lần mua gần nhất', 'Số ngày chưa mua', 'Độ trễ (ngày)', 'Trạng thái sức khỏe', 'Món ưa thích nhất']
+    ['Mức ưu tiên', 'Điểm ưu tiên', 'Tên khách hàng', 'Số điện thoại', 'Hạng VIP', 'Số đơn đã mua', 'Tổng chi tiêu (VNĐ)', 'Chu kỳ thường mua (ngày)', 'Lần mua gần nhất', 'Số ngày chưa mua', 'Độ trễ (ngày)', 'Trạng thái sức khỏe', 'Món ưa thích nhất']
   ];
 
   crmCustomers.forEach(c => {
@@ -3986,6 +4179,8 @@ function exportCustomerCycleExcel() {
     else if (c.health === 'DORMANT') healthLabel = 'Ngủ đông';
 
     rows.push([
+      c.pLevel,
+      c.priority,
       c.name,
       c.phone || '',
       c.isVip ? 'VIP' : 'Thường',
@@ -4010,7 +4205,7 @@ function exportCustomerCycleExcel() {
 let chartCycleDistributionInstance = null;
 let chartCustomerHealthInstance = null;
 let crmCustomers = [];
-let crmFilterState = { q: '', health: 'HIGH_RISK', sortKey: 'totalRev', sortDir: 'desc' };
+let crmFilterState = { q: '', health: 'P1', sortKey: 'priority', sortDir: 'desc' };
 
 function initCustomerCycleAnalysis() {
   const activeAll = D.orders.filter(o => !o.deleted && o.status !== 'CANCELLED');
@@ -4018,22 +4213,37 @@ function initCustomerCycleAnalysis() {
   let maxOrderTs = 0;
 
   for (const o of activeAll) {
-    const name = (o.customerName || 'Không rõ').trim();
-    const phone = (o.customerPhone || '').trim();
-    const cid = (phone || name).toLowerCase();
+    const rawPhone = (o.customerPhone || '').replace(/\D/g, '');
+    const validPhone = rawPhone.length >= 9 ? rawPhone : '';
+    const rawName = (o.customerName || '').trim();
+    let cid = '';
+    if (validPhone) {
+      cid = 'p:' + validPhone;
+    } else if (rawName && rawName.toLowerCase() !== 'không rõ' && rawName.toLowerCase() !== 'khong ro') {
+      cid = 'n:' + rawName.toLowerCase();
+    } else {
+      cid = 'anon:' + (o.id || Math.random());
+    }
+
     const ts = getOrderTs(o);
     if (ts > maxOrderTs) maxOrderTs = ts;
 
     if (!custMap[cid]) {
+      const displayName = rawName || (validPhone ? ('Khách ' + validPhone) : 'Khách lẻ');
+      const displayPhone = validPhone || (o.customerPhone || '').trim();
       custMap[cid] = {
-        name,
-        phone,
+        cid,
+        name: displayName,
+        phone: displayPhone,
         orders: [],
         totalRev: 0,
         favProducts: {}
       };
     }
-    custMap[cid].orders.push(ts);
+    custMap[cid].orders.push({
+      ts,
+      order: o
+    });
     custMap[cid].totalRev += (o.totalPrice || 0);
 
     for (const it of o.items || []) {
@@ -4047,24 +4257,28 @@ function initCustomerCycleAnalysis() {
 
   for (const cid of Object.keys(custMap)) {
     const c = custMap[cid];
-    const tsList = c.orders.sort((a, b) => a - b);
-    const count = tsList.length;
+    const sortedOrders = c.orders.sort((a, b) => a.ts - b.ts);
+    const count = sortedOrders.length;
     if (count < 2) continue;
 
     const intervals = [];
     for (let i = 1; i < count; i++) {
-      const diffDays = Math.round(((tsList[i] - tsList[i - 1]) / 86400000) * 10) / 10;
+      const diffDays = Math.round(((sortedOrders[i].ts - sortedOrders[i - 1].ts) / 86400000) * 10) / 10;
       if (diffDays > 0) {
         intervals.push(diffDays);
         intervalsAll.push(diffDays);
+        sortedOrders[i].intervalDays = diffDays;
+      } else {
+        sortedOrders[i].intervalDays = 0;
       }
     }
+    sortedOrders[0].intervalDays = null;
 
     const avgInterval = intervals.length
       ? Math.round((intervals.reduce((a, b) => a + b, 0) / intervals.length) * 10) / 10
       : 0;
 
-    const lastTs = tsList[tsList.length - 1];
+    const lastTs = sortedOrders[count - 1].ts;
     const daysSinceLast = Math.round(((maxOrderTs - lastTs) / 86400000) * 10) / 10;
     const overdue = Math.round((daysSinceLast - avgInterval) * 10) / 10;
 
@@ -4079,6 +4293,30 @@ function initCustomerCycleAnalysis() {
       healthStatus = 'HEALTHY';
     }
 
+    // Revenue score (0 - 50): Scale up to 3,000,000 VND
+    const revScore = Math.min(50, Math.round((c.totalRev / 3000000) * 50));
+
+    // Urgency score (0 - 50) based on overdue days relative to personal cycle
+    let urgScore = 0;
+    if (overdue <= 0) {
+      urgScore = overdue >= -3 ? 10 : 5;
+    } else if (overdue <= 7) {
+      urgScore = Math.round(32 + Math.min(12, overdue * 1.7));
+    } else if (overdue <= 25) {
+      urgScore = Math.round(45 + Math.min(5, (overdue - 8) * 0.3));
+    } else if (overdue <= 60) {
+      urgScore = Math.round(40 - Math.min(10, (overdue - 25) * 0.28));
+    } else {
+      urgScore = 20;
+    }
+
+    const priority = Math.min(100, Math.max(0, revScore + urgScore));
+    let pLevel = 'P4';
+    if (priority >= 70) pLevel = 'P1';
+    else if (priority >= 50) pLevel = 'P2';
+    else if (priority >= 30) pLevel = 'P3';
+    else pLevel = 'P4';
+
     let topProd = '—';
     let topQty = 0;
     for (const p of Object.keys(c.favProducts)) {
@@ -4089,6 +4327,7 @@ function initCustomerCycleAnalysis() {
     }
 
     const isVip = count >= 6 || c.totalRev >= 2000000;
+    const orderObjects = sortedOrders.slice().reverse();
 
     repeatList.push({
       cid,
@@ -4102,8 +4341,13 @@ function initCustomerCycleAnalysis() {
       daysSinceLast,
       overdue,
       health: healthStatus,
+      priority,
+      pLevel,
+      revScore,
+      urgScore,
       isVip,
-      topProd
+      topProd,
+      orderObjects
     });
   }
 
@@ -4116,6 +4360,7 @@ function initCustomerCycleAnalysis() {
   const sortedInts = intervalsAll.slice().sort((a, b) => a - b);
   const medianCycle = sortedInts.length ? sortedInts[Math.floor(sortedInts.length / 2)] : 0;
 
+  const p1Custs = crmCustomers.filter(c => c.pLevel === 'P1');
   const highRiskCusts = crmCustomers.filter(c => c.health === 'HIGH_RISK');
   const mildRiskCusts = crmCustomers.filter(c => c.health === 'MILD_RISK');
   const vipAtRiskCusts = crmCustomers.filter(c => c.isVip && (c.health === 'HIGH_RISK' || c.health === 'MILD_RISK'));
@@ -4135,6 +4380,8 @@ function initCustomerCycleAnalysis() {
   document.getElementById('crm-stat-atrisk').textContent = `${totalAtRiskCount} khách`;
   document.getElementById('crm-stat-atrisk-rev').textContent = fmtK(totalAtRiskRev);
 
+  const chipP1 = document.getElementById('chip-count-p1');
+  if (chipP1) chipP1.textContent = p1Custs.length;
   document.getElementById('chip-count-high').textContent = highRiskCusts.length;
   document.getElementById('chip-count-mild').textContent = mildRiskCusts.length;
   document.getElementById('chip-count-vip').textContent = vipAtRiskCusts.length;
@@ -4250,7 +4497,9 @@ function renderCrmTable() {
   }
 
   const hf = crmFilterState.health;
-  if (hf === 'VIP_AT_RISK') {
+  if (hf === 'P1') {
+    list = list.filter(c => c.pLevel === 'P1');
+  } else if (hf === 'VIP_AT_RISK') {
     list = list.filter(c => c.isVip && (c.health === 'HIGH_RISK' || c.health === 'MILD_RISK'));
   } else if (hf) {
     list = list.filter(c => c.health === hf);
@@ -4265,7 +4514,7 @@ function renderCrmTable() {
     return dir * ((av || 0) - (bv || 0));
   });
 
-  document.getElementById('crm-table-count').textContent = `Đang hiển thị ${list.length.toLocaleString('vi-VN')} / ${crmCustomers.length.toLocaleString('vi-VN')} khách quen`;
+  document.getElementById('crm-table-count').textContent = `Đang hiển thị ${list.length.toLocaleString('vi-VN')} / ${crmCustomers.length.toLocaleString('vi-VN')} khách quen · Bấm vào khách để tra cứu toàn bộ đơn`;
   document.getElementById('crm-empty').classList.toggle('hidden', list.length > 0);
 
   const tbody = document.getElementById('crm-tbody');
@@ -4281,24 +4530,34 @@ function renderCrmTable() {
       badgeHtml = `<span class="health-badge badge-dormant">⚪ Ngủ đông</span>`;
     }
 
+    const priorityBadge = `<span class="priority-badge p-${c.pLevel.toLowerCase()}">⚡ ${c.pLevel} · ${c.priority}đ</span>`;
     const vipBadge = c.isVip ? '<span class="sev-badge sev-high" style="margin-left:6px; font-size:9.5px; padding:1px 5px;">VIP</span>' : '';
     const healthClass = c.health.toLowerCase().replace('_', '-');
 
     return `
-      <tr class="crm-row ${healthClass}">
+      <tr class="crm-row ${healthClass}" data-cid="${esc(c.cid)}" title="Bấm để xem chi tiết lịch sử tất cả các đơn của ${esc(c.name)}">
         <td class="crm-col-cust">
           <div class="crm-cust-top">
             <div class="crm-name-group">
               <span class="crm-name-txt">${esc(c.name)}</span>
               ${vipBadge}
             </div>
-            <div class="crm-badge-mobile">${badgeHtml}</div>
+            <div class="crm-badge-mobile">
+              <div style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+                ${priorityBadge}
+                ${badgeHtml}
+              </div>
+            </div>
           </div>
           <div class="crm-phone-wrap">
             ${c.phone 
-              ? `<a href="tel:${c.phone}" class="crm-phone-link" title="Bấm để gọi điện">📱 ${esc(c.phone)}</a>` 
+              ? `<a href="tel:${c.phone}" class="crm-phone-link" title="Bấm để gọi điện" onclick="event.stopPropagation()">📱 ${esc(c.phone)}</a>` 
               : '<span class="crm-no-phone">📱 Không có SĐT</span>'}
           </div>
+        </td>
+        <td class="crm-col-stat text-center">
+          <span class="crm-m-lbl">Mức ưu tiên:</span>
+          <span class="crm-m-val">${priorityBadge}</span>
         </td>
         <td class="crm-col-stat crm-stat-count text-right text-mono">
           <span class="crm-m-lbl">Số đơn:</span>
@@ -4326,14 +4585,21 @@ function renderCrmTable() {
         </td>
         <td class="crm-col-actions text-right">
           <div class="crm-actions-bar">
-            ${c.phone ? `<a href="https://zalo.me/${c.phone}" target="_blank" class="btn-action-zalo" title="Mở Zalo nhắn tin">💬 Zalo</a>` : ''}
-            ${c.phone ? `<a href="tel:${c.phone}" class="btn-action-call" title="Bấm gọi điện">📞 Gọi</a>` : ''}
-            <button class="btn-action-msg" data-cid="${esc(c.cid)}" title="Mở mẫu tin nhắn chăm sóc">📋 Mẫu tin</button>
+            ${c.phone ? `<a href="https://zalo.me/${c.phone}" target="_blank" class="btn-action-zalo" title="Mở Zalo nhắn tin" onclick="event.stopPropagation()">💬 Zalo</a>` : ''}
+            ${c.phone ? `<a href="tel:${c.phone}" class="btn-action-call" title="Bấm gọi điện" onclick="event.stopPropagation()">📞 Gọi</a>` : ''}
+            <button class="btn-action-msg" data-cid="${esc(c.cid)}" title="Mở mẫu tin nhắn chăm sóc" onclick="event.stopPropagation()">📋 Mẫu tin</button>
           </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  tbody.querySelectorAll('tr.crm-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const cid = row.dataset.cid;
+      openCustomerOrdersDrawer(cid);
+    });
+  });
 
   tbody.querySelectorAll('.btn-action-msg').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -4344,6 +4610,189 @@ function renderCrmTable() {
     });
   });
 }
+
+function openCustomerOrdersDrawer(cid) {
+  const cust = crmCustomers.find(x => x.cid === cid);
+  if (!cust) return;
+
+  const drawer = document.getElementById('crm-customer-drawer');
+  const backdrop = document.getElementById('crm-drawer-backdrop');
+  if (!drawer || !backdrop) return;
+
+  document.getElementById('crm-drawer-cust-name').textContent = cust.name;
+  
+  let pLabel = 'Bình thường';
+  if (cust.pLevel === 'P1') pLabel = 'Khẩn cấp';
+  else if (cust.pLevel === 'P2') pLabel = 'Ưu tiên cao';
+  else if (cust.pLevel === 'P3') pLabel = 'Theo dõi';
+
+  document.getElementById('crm-drawer-priority-badge').innerHTML = `
+    <span class="priority-badge p-${cust.pLevel.toLowerCase()}">⚡ ${cust.pLevel} ${pLabel} · ${cust.priority} điểm</span>
+  `;
+
+  let healthBadge = '';
+  if (cust.health === 'HIGH_RISK') healthBadge = `<span class="health-badge badge-high-risk">🔴 Nguy cơ mất cao (+${cust.overdue}d)</span>`;
+  else if (cust.health === 'MILD_RISK') healthBadge = `<span class="health-badge badge-mild-risk">🟡 Trễ nhẹ (+${cust.overdue}d)</span>`;
+  else if (cust.health === 'HEALTHY') healthBadge = `<span class="health-badge badge-healthy">🟢 Đúng chu kỳ</span>`;
+  else healthBadge = `<span class="health-badge badge-dormant">⚪ Ngủ đông</span>`;
+  
+  document.getElementById('crm-drawer-health-badge').innerHTML = healthBadge;
+
+  const phoneWrap = document.getElementById('crm-drawer-phone-wrap');
+  if (cust.phone) {
+    phoneWrap.innerHTML = `
+      <a href="tel:${cust.phone}" title="Bấm gọi điện">📞 ${esc(cust.phone)}</a>
+      <span style="color:var(--dim)">·</span>
+      <a href="https://zalo.me/${cust.phone}" target="_blank" title="Nhắn Zalo">💬 Mở Zalo</a>
+      ${cust.isVip ? '<span class="sev-badge sev-high" style="margin-left:4px; font-size:10px; padding:1px 6px;">KHÁCH VIP</span>' : ''}
+    `;
+  } else {
+    phoneWrap.innerHTML = `<span>📱 Chưa có số điện thoại</span> ${cust.isVip ? '<span class="sev-badge sev-high" style="margin-left:4px; font-size:10px; padding:1px 6px;">KHÁCH VIP</span>' : ''}`;
+  }
+
+  const overdueText = cust.overdue > 0 ? `Trễ ${cust.overdue} ngày` : 'Đang đúng hẹn';
+
+  let ordersHtml = '';
+  const orders = cust.orderObjects || [];
+  for (let idx = 0; idx < orders.length; idx++) {
+    const itemObj = orders[idx];
+    const o = itemObj.order;
+    const ts = itemObj.ts;
+
+    let tagHtml = '';
+    if (idx === 0) {
+      tagHtml = `<span class="crm-order-tag tag-newest">⭐ Đơn gần nhất</span>`;
+    }
+    if (itemObj.intervalDays != null) {
+      tagHtml += ` <span class="crm-order-tag tag-interval">+${itemObj.intervalDays} ngày sau đơn trước</span>`;
+    } else if (idx === orders.length - 1 && orders.length > 1) {
+      tagHtml += ` <span class="crm-order-tag tag-first">🏁 Đơn mở đầu</span>`;
+    }
+
+    const itemsRows = (o.items || []).map(it => {
+      const price = it.price || it.unitPrice || 0;
+      const qty = it.qty || 1;
+      const total = price * qty;
+      return `
+        <tr>
+          <td style="color:var(--foam); font-weight:500;">${esc(it.name || 'Sản phẩm')}</td>
+          <td style="text-align:right; font-family:var(--font-mono); color:var(--mist);">${fmt(price)}</td>
+          <td style="text-align:center; font-family:var(--font-mono);">${qty}</td>
+          <td style="text-align:right; font-family:var(--font-mono); color:var(--sand); font-weight:600;">${fmt(total)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const statusVi = STATUS_VI[o.status] || o.status || 'Hoàn tất';
+    const address = o.deliveryAddress ? esc(o.deliveryAddress) : 'Tại cửa hàng / Không có địa chỉ';
+    const batch = o.batchName ? esc(o.batchName) : (o.note ? esc(o.note) : '—');
+
+    ordersHtml += `
+      <div class="crm-order-card">
+        <div class="crm-order-header">
+          <div>
+            <span class="crm-order-code">#${esc(o.code || o.id || 'ĐƠN')}</span>
+            <span style="font-size:11px; color:var(--dim); margin-left:6px; font-family:var(--font-mono);">${fmtDateTime(ts)}</span>
+          </div>
+          <div class="crm-order-tags">
+            ${tagHtml}
+          </div>
+        </div>
+        <div class="crm-order-meta">
+          <div>📍 <b>Địa chỉ:</b> ${address}</div>
+          <div>📦 <b>Lô / Ghi chú:</b> ${batch} · <b>Trạng thái:</b> <span style="color:var(--foam); font-weight:600;">${statusVi}</span></div>
+        </div>
+        <table class="crm-order-items-table">
+          <thead>
+            <tr>
+              <th>Món đặt</th>
+              <th style="text-align:right;">Đơn giá</th>
+              <th style="text-align:center;">SL</th>
+              <th style="text-align:right;">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsRows || '<tr><td colspan="4" style="color:var(--dim); text-align:center;">Không có chi tiết món</td></tr>'}
+          </tbody>
+        </table>
+        <div class="crm-order-total-bar">
+          <span style="color:var(--mist); font-size:12px;">Tổng tiền đơn hàng:</span>
+          <span class="crm-order-total-amount">${fmt(o.totalPrice || 0)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('crm-drawer-body').innerHTML = `
+    <div class="crm-drawer-summary-card">
+      <div class="crm-drawer-kpis">
+        <div class="crm-drawer-kpi-item">
+          <div class="crm-drawer-kpi-lbl">TỔNG CHI TIÊU</div>
+          <div class="crm-drawer-kpi-val" style="color:var(--sand);">${fmt(cust.totalRev)}</div>
+        </div>
+        <div class="crm-drawer-kpi-item">
+          <div class="crm-drawer-kpi-lbl">TỔNG SỐ ĐƠN</div>
+          <div class="crm-drawer-kpi-val">📦 ${cust.count} đơn</div>
+        </div>
+        <div class="crm-drawer-kpi-item">
+          <div class="crm-drawer-kpi-lbl">CHU KỲ TB</div>
+          <div class="crm-drawer-kpi-val" style="color:var(--tide);">⏱️ ~${cust.avgInterval} ngày</div>
+        </div>
+        <div class="crm-drawer-kpi-item">
+          <div class="crm-drawer-kpi-lbl">CHƯA MUA LẠI</div>
+          <div class="crm-drawer-kpi-val" style="color:${cust.overdue > 0 ? 'var(--coral)' : 'var(--kelp)'};">⏳ ${Math.floor(cust.daysSinceLast)}d (${overdueText})</div>
+        </div>
+      </div>
+      <div class="crm-drawer-actions-bar">
+        <button class="btn-action-msg" id="crm-drawer-open-msg" style="padding:7px 12px; font-size:12px; font-weight:600;">📋 Mở mẫu tin nhắn chăm sóc</button>
+        ${cust.phone ? `<a href="https://zalo.me/${cust.phone}" target="_blank" class="btn-action-zalo" style="padding:7px 12px; font-size:12px;">💬 Nhắn Zalo ngay</a>` : ''}
+        ${cust.phone ? `<a href="tel:${cust.phone}" class="btn-action-call" style="padding:7px 12px; font-size:12px;">📞 Gọi điện</a>` : ''}
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+      <h4 style="font-size:13px; font-weight:700; color:var(--foam); text-transform:uppercase; letter-spacing:.04em; margin:0;">
+        📦 Toàn bộ ${orders.length} giao dịch đã thực hiện
+      </h4>
+      <span style="font-size:11px; color:var(--dim); font-family:var(--font-mono);">Mới nhất xếp trước</span>
+    </div>
+
+    <div class="crm-order-timeline">
+      ${ordersHtml}
+    </div>
+  `;
+
+  const btnDrawerMsg = document.getElementById('crm-drawer-open-msg');
+  if (btnDrawerMsg) {
+    btnDrawerMsg.addEventListener('click', () => {
+      openCrmMessageModal(cust);
+    });
+  }
+
+  drawer.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function closeCustomerDrawer() {
+  const drawer = document.getElementById('crm-customer-drawer');
+  const backdrop = document.getElementById('crm-drawer-backdrop');
+  if (drawer) drawer.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+const crmDrawerCloseBtn = document.getElementById('crm-drawer-close-btn');
+if (crmDrawerCloseBtn) {
+  crmDrawerCloseBtn.addEventListener('click', closeCustomerDrawer);
+}
+const crmDrawerBackdrop = document.getElementById('crm-drawer-backdrop');
+if (crmDrawerBackdrop) {
+  crmDrawerBackdrop.addEventListener('click', closeCustomerDrawer);
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeCustomerDrawer();
+  }
+});
 
 function openCrmMessageModal(c) {
   const modal = document.getElementById('crm-msg-modal');
