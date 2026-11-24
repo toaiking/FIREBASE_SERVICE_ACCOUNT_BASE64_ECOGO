@@ -2045,9 +2045,83 @@ select:focus { border-color: var(--tide); }
   .kpi-card:last-child { grid-column: span 1; }
 }
 .hidden { display: none !important; }
+/* Auth Gate Overlay (AES-256-GCM Dashboard Lock) */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at 20% 20%, rgba(45, 212, 191, 0.12), transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.10), transparent 50%),
+              #070b11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(15, 23, 34, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  text-align: center;
+}
+.auth-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: rgba(45, 212, 191, 0.14);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.auth-title { font-size: 18px; font-weight: 700; color: var(--foam); margin-bottom: 6px; }
+.auth-sub { font-size: 12.5px; color: var(--mist); margin-bottom: 18px; line-height: 1.5; }
+.auth-input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--abyss);
+  color: var(--foam);
+  font-size: 14px;
+  font-family: var(--font-mono);
+  outline: none;
+  margin-bottom: 12px;
+}
+.auth-input:focus { border-color: var(--current); }
+.auth-btn {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #2dd4bf, #0284c7);
+  color: #061018;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.auth-btn:disabled { opacity: 0.6; cursor: wait; }
+.auth-err { color: var(--coral); font-size: 12px; margin-top: 10px; min-height: 18px; }
 </style>
 </head>
 <body>
+
+<div class="auth-gate hidden" id="auth-gate">
+  <form class="auth-card" id="auth-gate-form">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">EcoGo Dashboard Bảo Mật</div>
+    <div class="auth-sub">Toàn bộ dữ liệu kinh doanh &amp; khách hàng đã được mã hóa AES-256-GCM. Nhập mật khẩu để giải mã trên trình duyệt.</div>
+    <input type="password" id="auth-password-input" class="auth-input" placeholder="Nhập mật khẩu truy cập..." autocomplete="current-password" required>
+    <button type="submit" class="auth-btn" id="auth-unlock-btn">🔓 Mở khóa Dashboard</button>
+    <div class="auth-err" id="auth-error-msg"></div>
+  </form>
+</div>
 
 <header>
   <div class="header-inner">
@@ -2353,6 +2427,8 @@ select:focus { border-color: var(--tide); }
             <th class="sortable text-right" data-sort="deletedCount">Xoá mềm</th>
             <th class="sortable text-right" data-sort="totalQty">SL hàng hoá</th>
             <th class="sortable text-right" data-sort="revenue">Doanh thu</th>
+            <th class="sortable text-right" data-sort="collected">Thực thu</th>
+            <th class="sortable text-right" data-sort="profit">Lợi nhuận</th>
             <th class="sortable" data-sort="lastDate">Khoảng thời gian</th>
           </tr></thead>
           <tbody id="batches-full-tbody"></tbody>
@@ -2740,9 +2816,13 @@ select:focus { border-color: var(--tide); }
           </select>
           <select id="order-payment-filter">
             <option value="">Tất cả thanh toán</option>
-            <option value="TRANSFER_VERIFIED">CK đã xác nhận</option>
-            <option value="TRANSFER_UNVERIFIED">CK chưa xác nhận</option>
-            <option value="CASH">Tiền mặt</option>
+            <option value="PAYOS_AUTO">⚡ PayOS tự động</option>
+            <option value="TRANSFER_VERIFIED">✓ CK đã xác nhận</option>
+            <option value="TRANSFER_UNVERIFIED">⏳ CK chưa xác nhận</option>
+            <option value="PARTIALLY_PAID">◐ Trả 1 phần (còn nợ)</option>
+            <option value="UNPAID_DEBT">💳 Tất cả còn công nợ</option>
+            <option value="CASH">💵 Tiền mặt (CASH)</option>
+            <option value="VOIDED">🚫 Đã hoàn / hủy TT</option>
           </select>
         </div>
       </div>
@@ -2815,7 +2895,7 @@ select:focus { border-color: var(--tide); }
     <p class="eyebrow">Cân đối Dòng tiền & Doanh thu trong kỳ</p>
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Phân rã doanh thu theo trạng thái</span></div>
+        <div class="panel-head"><span class="panel-title">Phân rã doanh thu, thực thu &amp; lợi nhuận</span></div>
         <div class="table-scroll">
           <table>
             <thead><tr><th>Dòng tiền</th><th class="text-right">Số đơn</th><th class="text-right">Tổng tiền</th><th class="text-right">Tỷ trọng</th></tr></thead>
@@ -2824,13 +2904,23 @@ select:focus { border-color: var(--tide); }
         </div>
       </div>
       <div class="panel">
-        <div class="panel-head"><span class="panel-title">Cơ cấu phương thức thanh toán</span></div>
+        <div class="panel-head"><span class="panel-title">Cơ cấu xác thực thanh toán</span></div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Phương thức</th><th class="text-right">Số đơn</th><th class="text-right">Tổng tiền</th><th class="text-right">Tỷ trọng</th></tr></thead>
+            <thead><tr><th>Trạng thái / Phương thức</th><th class="text-right">Số đơn</th><th class="text-right">Giá trị</th><th class="text-right">Tỷ trọng</th></tr></thead>
             <tbody id="report-payment-tbody"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div class="panel" id="report-ledger-panel" style="margin-top:16px;">
+      <div class="panel-head"><span class="panel-title">Sổ cái dòng tiền thực thu (payment_ledger)<span class="sub" id="report-ledger-sub">đối soát PayOS &amp; xác nhận thủ công</span></span></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nguồn ghi nhận</th><th class="text-right">Số giao dịch</th><th class="text-right">Dòng tiền ròng</th><th class="text-right">Tỷ trọng</th></tr></thead>
+          <tbody id="report-ledger-tbody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -2903,17 +2993,131 @@ select:focus { border-color: var(--tide); }
 </div>
 
 <script>
-const D = __DASHBOARD_DATA__;
+const __PAYLOAD__ = __DASHBOARD_DATA__;
 
-/* ════════════════ HELPERS ════════════════ */
+async function decryptDashboardPayload(encObj, password) {
+  const b64ToBytes = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  const aesKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: b64ToBytes(encObj.salt),
+      iterations: encObj.iterations || 100000,
+      hash: 'SHA-256'
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  const decryptedBuf = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: b64ToBytes(encObj.iv) },
+    aesKey,
+    b64ToBytes(encObj.ciphertext)
+  );
+  return JSON.parse(new TextDecoder().decode(decryptedBuf));
+}
+
+function initDashboard(D) {
+
+/* ════════════════ HELPERS & VIETNAM TIMEZONE (GMT+7) ════════════════ */
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+const PAYMENT_STATUS_SET = new Set(['UNPAID', 'PENDING_TRANSFER', 'PARTIALLY_PAID', 'VERIFIED_MANUAL', 'VERIFIED_BANK_AUTO', 'VOIDED']);
+
 const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(n||0)) + 'đ';
 const fmtK = n => { n = n||0; return Math.abs(n) >= 1e6 ? (n/1e6).toFixed(2)+'M' : Math.abs(n) >= 1e3 ? (n/1e3).toFixed(0)+'K' : Math.round(n).toString(); };
-const fmtDate = ts => { if(!ts) return '—'; const d = new Date(ts > 1e12 ? ts : ts*1000); return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'}); };
-const fmtDateTime = ts => { if(!ts) return '—'; const d = new Date(ts > 1e12 ? ts : ts*1000); return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+const fmtDate = ts => { if(!ts) return '—'; const d = new Date(ts > 1e12 ? ts : ts*1000); return d.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'2-digit'}); };
+const fmtDateTime = ts => { if(!ts) return '—'; const d = new Date(ts > 1e12 ? ts : ts*1000); return d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
 const STATUS_VI = {PENDING:'Chờ xử lý',IN_TRANSIT:'Đang giao',PICKED_UP:'Đã lấy hàng',DELIVERED:'Đã giao',CANCELLED:'Đã huỷ',UNKNOWN:'Không rõ'};
 const PAY_VI = {CASH:'Tiền mặt',TRANSFER:'Chuyển khoản'};
+const PAY_STATUS_VI = {
+  UNPAID: 'Chưa thu',
+  PENDING_TRANSFER: 'Chờ CK',
+  PARTIALLY_PAID: 'Trả 1 phần',
+  VERIFIED_MANUAL: 'Đã XN thủ công',
+  VERIFIED_BANK_AUTO: 'PayOS Auto',
+  VOIDED: 'Đã hoàn/hủy TT'
+};
 const esc = s => String(s==null?'—':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const getOrderTs = o => o.createdAt > 1e12 ? o.createdAt : o.createdAt * 1000;
+
+const toVNShifted = ts => {
+  const ms = ts > 1e12 ? ts : ts * 1000;
+  return ms ? new Date(ms + VN_OFFSET_MS) : null;
+};
+const toVNDateKey = ts => {
+  const d = toVNShifted(ts);
+  if (!d) return '';
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+};
+const toVNMonthKey = ts => {
+  const d = toVNShifted(ts);
+  if (!d) return '';
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+};
+const toVNWeekKey = ts => {
+  const d = toVNShifted(ts);
+  if (!d) return '';
+  const dow = d.getUTCDay();
+  const mon = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((dow + 6) % 7)));
+  return `${mon.getUTCFullYear()}-${String(mon.getUTCMonth()+1).padStart(2,'0')}-${String(mon.getUTCDate()).padStart(2,'0')}`;
+};
+const getVNDayOfWeek = ts => { const d = toVNShifted(ts); return d ? d.getUTCDay() : 0; };
+const getVNHour = ts => { const d = toVNShifted(ts); return d ? d.getUTCHours() : 0; };
+const getVNDayBounds = dateKey => {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const start = Date.UTC(y, m - 1, d, 0, 0, 0, 0) - VN_OFFSET_MS;
+  return { start, end: start + 86400000 - 1 };
+};
+
+const normalizePhone = phone => {
+  if (!phone) return '';
+  let p = String(phone).replace(/[^0-9]/g, '');
+  if (p.startsWith('84') && p.length >= 10) p = '0' + p.slice(2);
+  if (p.length === 9 && !p.startsWith('0')) p = '0' + p;
+  return p;
+};
+const normMethod = m => (m === 'TRANSFER' || m === 'PAID') ? 'TRANSFER' : 'CASH';
+const derivePayStatus = o => {
+  if (!o) return 'UNPAID';
+  if (o.paymentStatus && PAYMENT_STATUS_SET.has(o.paymentStatus)) return o.paymentStatus;
+  if (o.payOk === true) return 'VERIFIED_BANK_AUTO';
+  if (o.paymentVerified === true) return 'VERIFIED_MANUAL';
+  if (o.status === 'CANCELLED') return 'VOIDED';
+  if (o.paymentMethod === 'TRANSFER' || o.paymentMethod === 'PAID') return 'PENDING_TRANSFER';
+  return 'UNPAID';
+};
+const getPaidAmt = o => {
+  if (!o) return 0;
+  const total = Math.max(0, Math.round(Number(o.totalPrice || 0)));
+  if (typeof o.paidAmount === 'number' && Number.isFinite(o.paidAmount) && o.paidAmount >= 0) {
+    return Math.min(total, Math.round(o.paidAmount));
+  }
+  const st = derivePayStatus(o);
+  return (st === 'VERIFIED_MANUAL' || st === 'VERIFIED_BANK_AUTO') ? total : 0;
+};
+const getOrderCost = o => {
+  if (typeof o.orderCost === 'number' && Number.isFinite(o.orderCost)) return o.orderCost;
+  let c = 0;
+  for (const it of (o.items || [])) {
+    c += Number(it.importPrice || 0) * Number(it.qty ?? it.quantity ?? 0);
+  }
+  return Math.round(c);
+};
+const getCanonicalCustKey = o => {
+  if (o.customerKey) return o.customerKey;
+  const np = normalizePhone(o.customerPhone);
+  if (np.length >= 9) return 'p:' + np;
+  if (o.customerId) return 'id:' + o.customerId;
+  return 'n:' + (o.customerName || 'Không rõ').trim().toLowerCase();
+};
 
 /* ════════════════ HEADER META ════════════════ */
 document.getElementById('meta-updated').textContent = 'Cập nhật ' + fmtDateTime(new Date(D.meta.generatedAt).getTime());
@@ -2955,16 +3159,19 @@ let currentFilteredBatches = [];
 let currentFilteredStats = {};
 
 function calculateDateBounds(key, customFrom, customTo) {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const todayEnd = todayStart + 86400000 - 1;
+  const nowMs = Date.now();
+  const todayVN = toVNDateKey(nowMs);
+  const { start: todayStart, end: todayEnd } = getVNDayBounds(todayVN);
+  const shiftedNow = toVNShifted(nowMs);
+  const vnY = shiftedNow.getUTCFullYear();
+  const vnM = shiftedNow.getUTCMonth();
 
   if (key === 'today') {
-    return { start: todayStart, end: todayEnd, label: `Hôm nay (${now.toLocaleDateString('vi-VN')})` };
+    const [y, m, d] = todayVN.split('-');
+    return { start: todayStart, end: todayEnd, label: `Hôm nay (${d}/${m}/${y})` };
   }
   if (key === 'yesterday') {
-    const yStart = todayStart - 86400000;
-    return { start: yStart, end: todayStart - 1, label: 'Hôm qua' };
+    return { start: todayStart - 86400000, end: todayStart - 1, label: 'Hôm qua' };
   }
   if (key === '7d') {
     return { start: todayEnd - 7 * 86400000 + 1, end: todayEnd, label: '7 ngày qua' };
@@ -2973,18 +3180,18 @@ function calculateDateBounds(key, customFrom, customTo) {
     return { start: todayEnd - 30 * 86400000 + 1, end: todayEnd, label: '30 ngày qua' };
   }
   if (key === 'this_month') {
-    const mStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    return { start: mStart, end: todayEnd, label: `Tháng ${now.getMonth()+1}/${now.getFullYear()}` };
+    const mStart = Date.UTC(vnY, vnM, 1, 0, 0, 0, 0) - VN_OFFSET_MS;
+    return { start: mStart, end: todayEnd, label: `Tháng ${vnM + 1}/${vnY}` };
   }
   if (key === 'last_month') {
-    const lmStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
-    const lmEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).getTime();
-    const prevMonth = new Date(lmStart);
-    return { start: lmStart, end: lmEnd, label: `Tháng ${prevMonth.getMonth()+1}/${prevMonth.getFullYear()}` };
+    const lmStart = Date.UTC(vnY, vnM - 1, 1, 0, 0, 0, 0) - VN_OFFSET_MS;
+    const lmEnd = Date.UTC(vnY, vnM, 1, 0, 0, 0, 0) - VN_OFFSET_MS - 1;
+    const prevDate = toVNShifted(lmStart);
+    return { start: lmStart, end: lmEnd, label: `Tháng ${prevDate.getUTCMonth() + 1}/${prevDate.getUTCFullYear()}` };
   }
   if (key === 'custom') {
-    const s = customFrom ? new Date(customFrom + 'T00:00:00').getTime() : null;
-    const e = customTo ? new Date(customTo + 'T23:59:59.999').getTime() : null;
+    const s = customFrom ? getVNDayBounds(customFrom).start : null;
+    const e = customTo ? getVNDayBounds(customTo).end : null;
     return { start: s, end: e, label: `${customFrom||'—'} → ${customTo||'—'}` };
   }
   return { start: null, end: null, label: 'Toàn bộ thời gian' };
@@ -2999,7 +3206,6 @@ function applyDateFilter(key, customFrom, customTo) {
 
   document.getElementById('active-range-text').textContent = currentRangeLabel;
 
-  // Filter orders
   if (currentStartTs == null && currentEndTs == null) {
     currentFilteredOrders = allLiveOrders;
   } else {
@@ -3011,7 +3217,6 @@ function applyDateFilter(key, customFrom, customTo) {
     });
   }
 
-  // Calculate stats
   const active = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
   const delivered = currentFilteredOrders.filter(o => o.status === 'DELIVERED');
   const pending = currentFilteredOrders.filter(o => o.status === 'PENDING');
@@ -3019,23 +3224,61 @@ function applyDateFilter(key, customFrom, customTo) {
   const pickedUp = currentFilteredOrders.filter(o => o.status === 'PICKED_UP');
   const cancelled = currentFilteredOrders.filter(o => o.status === 'CANCELLED');
 
-  const totalRev = active.reduce((s, o) => s + (o.totalPrice || 0), 0);
-  const delRev = delivered.reduce((s, o) => s + (o.totalPrice || 0), 0);
+  let totalRev = 0, delRev = 0, collectedRev = 0, receivableRev = 0, totalCost = 0, totalProfit = 0;
+  let bankAutoCount = 0, bankAutoRev = 0;
+  let manualVerCount = 0, manualVerRev = 0;
+  let partiallyPaidCount = 0, partiallyPaidPaid = 0, partiallyPaidRem = 0;
+  let voidedCount = 0, voidedRev = 0;
+  let transferVerCount = 0, transferUnvCount = 0, transferUnvRev = 0;
+  let cashVerifiedCount = 0, cashVerifiedRev = 0, cashUnpaidCount = 0, cashUnpaidRev = 0;
+
+  for (const o of active) {
+    const price = Math.max(0, Math.round(Number(o.totalPrice || 0)));
+    const pStatus = derivePayStatus(o);
+    const pMethod = normMethod(o.paymentMethod);
+    const paid = pStatus === 'VOIDED' ? 0 : getPaidAmt(o);
+    const rem = pStatus === 'VOIDED' ? 0 : Math.max(0, price - paid);
+    const cost = getOrderCost(o);
+
+    totalRev += price;
+    if (o.status === 'DELIVERED') delRev += price;
+    collectedRev += paid;
+    receivableRev += rem;
+    totalCost += cost;
+    totalProfit += (price - cost);
+
+    if (pStatus === 'VERIFIED_BANK_AUTO') { bankAutoCount++; bankAutoRev += paid; }
+    else if (pStatus === 'VERIFIED_MANUAL') { manualVerCount++; manualVerRev += paid; }
+    else if (pStatus === 'PARTIALLY_PAID') { partiallyPaidCount++; partiallyPaidPaid += paid; partiallyPaidRem += rem; }
+    else if (pStatus === 'VOIDED') { voidedCount++; voidedRev += price; }
+
+    if (pMethod === 'TRANSFER') {
+      if (pStatus === 'VERIFIED_BANK_AUTO' || pStatus === 'VERIFIED_MANUAL') transferVerCount++;
+      else if (pStatus === 'PENDING_TRANSFER' || pStatus === 'PARTIALLY_PAID') {
+        transferUnvCount++;
+        transferUnvRev += rem;
+      }
+    } else {
+      if (pStatus === 'VERIFIED_MANUAL') { cashVerifiedCount++; cashVerifiedRev += paid; }
+      else if (pStatus === 'UNPAID' || pStatus === 'PARTIALLY_PAID') { cashUnpaidCount++; cashUnpaidRev += rem; }
+    }
+  }
+
   const pipeRev = [...pending, ...inTransit, ...pickedUp].reduce((s, o) => s + (o.totalPrice || 0), 0);
   const cancRev = cancelled.reduce((s, o) => s + (o.totalPrice || 0), 0);
-
-  const transferOrders = active.filter(o => o.paymentMethod === 'TRANSFER');
-  const transferVerified = transferOrders.filter(o => o.paymentVerified === true);
-  const transferUnverified = transferOrders.filter(o => o.paymentVerified !== true);
-  const transferUnverifiedRev = transferUnverified.reduce((s, o) => s + (o.totalPrice || 0), 0);
-
-  const uniqueCustomers = new Set(active.map(o => o.customerName || o.customerPhone)).size;
+  const uniqueCustomers = new Set(active.map(getCanonicalCustKey)).size;
+  const marginPct = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0;
 
   currentFilteredStats = {
     totalOrders: currentFilteredOrders.length,
     activeOrdersCount: active.length,
     totalRevenue: totalRev,
     deliveredRevenue: delRev,
+    collectedRevenue: collectedRev,
+    receivableRevenue: receivableRev,
+    totalCost,
+    grossProfit: totalProfit,
+    profitMargin: marginPct,
     pipelineRevenue: pipeRev,
     cancelledRevenue: cancRev,
     avgOrderValue: active.length ? totalRev / active.length : 0,
@@ -3044,54 +3287,83 @@ function applyDateFilter(key, customFrom, customTo) {
     inTransit: inTransit.length,
     pickedUp: pickedUp.length,
     cancelled: cancelled.length,
-    transferVerified: transferVerified.length,
-    transferUnverified: transferUnverified.length,
-    transferUnverifiedRevenue: transferUnverifiedRev,
+    bankAutoCount,
+    bankAutoRev,
+    manualVerCount,
+    manualVerRev,
+    partiallyPaidCount,
+    partiallyPaidPaid,
+    partiallyPaidRem,
+    voidedCount,
+    voidedRev,
+    transferVerified: transferVerCount,
+    transferUnverified: transferUnvCount,
+    transferUnverifiedRevenue: transferUnvRev,
+    cashVerifiedCount,
+    cashVerifiedRev,
+    cashUnpaidCount,
+    cashUnpaidRev,
     uniqueCustomers
   };
 
-  // Re-aggregate products
+  // Re-aggregate products (with cost & profit)
   const pMap = {};
   for (const o of active) {
     for (const it of o.items || []) {
       const name = (it.name || 'Khác').trim();
-      if (!pMap[name]) pMap[name] = { name, qty: 0, revenue: 0, orders: 0 };
-      pMap[name].qty += it.qty || 0;
-      pMap[name].revenue += (it.price || 0) * (it.qty || 0);
+      const qty = Number(it.qty ?? it.quantity ?? 0);
+      const rev = Math.round(Number(it.price || 0) * qty);
+      const cost = Math.round(Number(it.importPrice || 0) * qty);
+      if (!pMap[name]) pMap[name] = { name, qty: 0, revenue: 0, cost: 0, profit: 0, orders: 0 };
+      pMap[name].qty += qty;
+      pMap[name].revenue += rev;
+      pMap[name].cost += cost;
+      pMap[name].profit += (rev - cost);
       pMap[name].orders += 1;
     }
   }
   currentFilteredProducts = Object.values(pMap).sort((a, b) => b.revenue - a.revenue);
 
-  // Re-aggregate customers
+  // Re-aggregate customers canonically
   const cMap = {};
   for (const o of active) {
-    const name = o.customerName || 'Không rõ';
-    if (!cMap[name]) cMap[name] = { name, count: 0, revenue: 0, phone: o.customerPhone || '' };
-    cMap[name].count += 1;
-    cMap[name].revenue += o.totalPrice || 0;
+    const cKey = getCanonicalCustKey(o);
+    if (!cMap[cKey]) cMap[cKey] = { key: cKey, name: o.customerName || 'Không rõ', count: 0, revenue: 0, collected: 0, phone: o.customerPhone || '' };
+    cMap[cKey].count += 1;
+    cMap[cKey].revenue += o.totalPrice || 0;
+    cMap[cKey].collected += getPaidAmt(o);
   }
   currentFilteredCustomers = Object.values(cMap).sort((a, b) => b.revenue - a.revenue);
 
-  // Re-aggregate batches
+  // Re-aggregate batches (with collected, receivable, cost, profit)
   const bMap = {};
   for (const o of currentFilteredOrders) {
     const b = o.batchId || 'Không có lô';
     if (!bMap[b]) {
-      bMap[b] = { name: b, count: 0, revenue: 0, cancelled: 0, deletedCount: 0, products: {}, firstDate: null, lastDate: null, totalQty: 0 };
+      bMap[b] = { name: b, count: 0, revenue: 0, collected: 0, receivable: 0, cost: 0, profit: 0, cancelled: 0, deletedCount: 0, products: {}, firstDate: null, lastDate: null, totalQty: 0 };
     }
     const entry = bMap[b];
     entry.count += 1;
     if (o.status === 'CANCELLED') {
       entry.cancelled += 1;
     } else {
-      entry.revenue += o.totalPrice || 0;
+      const price = Math.max(0, Math.round(Number(o.totalPrice || 0)));
+      const pStatus = derivePayStatus(o);
+      const paid = pStatus === 'VOIDED' ? 0 : getPaidAmt(o);
+      const rem = pStatus === 'VOIDED' ? 0 : Math.max(0, price - paid);
+      const cost = getOrderCost(o);
+      entry.revenue += price;
+      entry.collected += paid;
+      entry.receivable += rem;
+      entry.cost += cost;
+      entry.profit += (price - cost);
       for (const it of o.items || []) {
         const name = (it.name || 'Khác').trim();
+        const qty = Number(it.qty ?? it.quantity ?? 0);
         if (!entry.products[name]) entry.products[name] = { name, qty: 0, revenue: 0 };
-        entry.products[name].qty += it.qty || 0;
-        entry.products[name].revenue += (it.price || 0) * (it.qty || 0);
-        entry.totalQty += it.qty || 0;
+        entry.products[name].qty += qty;
+        entry.products[name].revenue += (it.price || 0) * qty;
+        entry.totalQty += qty;
       }
     }
     const t = getOrderTs(o);
@@ -3105,7 +3377,6 @@ function applyDateFilter(key, customFrom, customTo) {
     products: Object.values(b.products).sort((x, y) => y.qty - x.qty)
   })).sort((a, b) => b.revenue - a.revenue);
 
-  // Update UI components
   renderKpis();
   renderCharts();
   renderHeatmap();
@@ -3121,13 +3392,14 @@ function applyDateFilter(key, customFrom, customTo) {
 /* ════════════════ KPI CARDS ════════════════ */
 function renderKpis() {
   const s = currentFilteredStats;
+  const collectPct = s.totalRevenue > 0 ? ((s.collectedRevenue / s.totalRevenue) * 100).toFixed(1) : '0.0';
   const kpis = [
     { label: 'Tổng đơn hàng', value: s.totalOrders.toLocaleString('vi-VN'), sub: s.uniqueCustomers + ' khách hàng', icon: '📦' },
-    { label: 'Doanh thu thực nhận', value: fmtK(s.deliveredRevenue), sub: 'Đã giao thành công', icon: '💰', style: 'color:var(--kelp)' },
-    { label: 'Doanh thu đặt hàng', value: fmtK(s.totalRevenue), sub: fmt(s.totalRevenue), icon: '📈' },
-    { label: 'Giá trị TB / đơn', value: fmtK(s.avgOrderValue), sub: 'trung bình', icon: '🏷️' },
+    { label: 'Doanh thu ghi nhận', value: fmtK(s.totalRevenue), sub: 'Đã giao: ' + fmtK(s.deliveredRevenue), icon: '📈' },
+    { label: 'Thực thu (Đã XN)', value: fmtK(s.collectedRevenue), sub: `${collectPct}% · PayOS ${s.bankAutoCount} + XN ${s.manualVerCount}`, icon: '💰', style: 'color:var(--kelp)' },
+    { label: 'Phải thu / Công nợ', value: fmtK(s.receivableRevenue), sub: `CK chờ: ${s.transferUnverified} · Trả thiếu: ${s.partiallyPaidCount}`, icon: '🏦', view: 'orders-debt', warn: (s.receivableRevenue > 0) },
+    { label: 'Lợi nhuận gộp', value: fmtK(s.grossProfit), sub: `Biên ${s.profitMargin.toFixed(1)}% · Vốn ${fmtK(s.totalCost)}`, icon: '💎', style: 'color:var(--tide)' },
     { label: 'Đang giao & Chờ', value: (s.pending + s.inTransit + s.pickedUp).toLocaleString('vi-VN'), sub: fmtK(s.pipelineRevenue), icon: '⏳', warn: (s.pending > 0) },
-    { label: 'CK chưa xác nhận', value: s.transferUnverified.toLocaleString('vi-VN'), sub: fmt(s.transferUnverifiedRevenue), icon: '🏦', view: 'orders-unverified', warn: (s.transferUnverified > 0) },
     { label: 'Đã huỷ & Xoá', value: (s.cancelled + D.stats.deletedCount).toLocaleString('vi-VN'), sub: 'thất thoát ' + fmtK(s.cancelledRevenue), icon: '🗑️', view: 'deleted', warn: (s.cancelled > 0) },
   ];
   document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
@@ -3139,11 +3411,12 @@ function renderKpis() {
   document.querySelectorAll('#kpi-grid [data-jump]').forEach(card => {
     card.addEventListener('click', () => {
       const jump = card.dataset.jump;
-      if (jump === 'orders-unverified') {
+      if (jump === 'orders-debt' || jump === 'orders-unverified') {
+        const filterVal = jump === 'orders-debt' ? 'UNPAID_DEBT' : 'TRANSFER_UNVERIFIED';
         switchView('orders');
         const paySel = document.getElementById('order-payment-filter');
-        if (paySel) paySel.value = 'TRANSFER_UNVERIFIED';
-        orderFilterState.payment = 'TRANSFER_UNVERIFIED';
+        if (paySel) paySel.value = filterVal;
+        orderFilterState.payment = filterVal;
         renderOrders();
       } else {
         switchView(jump);
@@ -3182,8 +3455,8 @@ function renderCharts() {
   for (const o of active) {
     const t = getOrderTs(o);
     if (!t) continue;
-    const d = new Date(t);
-    const dayOfWeek = d.getDay(); // 0=CN, 6=T7
+    const shifted = toVNShifted(t);
+    const dayOfWeek = shifted.getUTCDay(); // 0=CN, 6=T7 (GMT+7)
     const isWk = (dayOfWeek === 0 || dayOfWeek === 6);
     const price = o.totalPrice || 0;
 
@@ -3195,8 +3468,8 @@ function renderCharts() {
       totalWeekdayOrders += 1;
     }
 
-    // Daily
-    const dateKey = d.toISOString().slice(0, 10);
+    // Daily (GMT+7)
+    const dateKey = toVNDateKey(t);
     if (!dailyMap[dateKey]) {
       dailyMap[dateKey] = { total: 0, weekend: 0, weekday: 0, count: 0, isWk, dow: DOW_SHORT_VI[dayOfWeek], dowFull: DOW_FULL_VI[dayOfWeek] };
     }
@@ -3205,26 +3478,24 @@ function renderCharts() {
     if (isWk) dailyMap[dateKey].weekend += price;
     else dailyMap[dateKey].weekday += price;
 
-    // Monthly
-    const monthKey = d.toISOString().slice(0, 7); // YYYY-MM
+    // Monthly (GMT+7)
+    const monthKey = toVNMonthKey(t); // YYYY-MM
     if (!monthlyMap[monthKey]) {
-      monthlyMap[monthKey] = { total: 0, weekend: 0, weekday: 0, count: 0, label: `Tháng ${d.getMonth()+1}/${d.getFullYear()}` };
+      monthlyMap[monthKey] = { total: 0, weekend: 0, weekday: 0, count: 0, label: `Tháng ${shifted.getUTCMonth()+1}/${shifted.getUTCFullYear()}` };
     }
     monthlyMap[monthKey].total += price;
     monthlyMap[monthKey].count += 1;
     if (isWk) monthlyMap[monthKey].weekend += price;
     else monthlyMap[monthKey].weekday += price;
 
-    // Weekly (thứ Hai đầu tuần)
-    const mon = new Date(d);
-    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const weekKey = mon.toISOString().slice(0, 10);
+    // Weekly (thứ Hai đầu tuần GMT+7)
+    const weekKey = toVNWeekKey(t);
     if (!weeklyMap[weekKey]) {
-      const sun = new Date(mon);
-      sun.setDate(mon.getDate() + 6);
+      const monBounds = getVNDayBounds(weekKey);
+      const sunTs = monBounds.start + 6 * 86400000;
       weeklyMap[weekKey] = {
         total: 0, weekend: 0, weekday: 0, count: 0,
-        label: `${fmtDate(mon.getTime())} → ${fmtDate(sun.getTime())}`
+        label: `${fmtDate(monBounds.start)} → ${fmtDate(sunTs)}`
       };
     }
     weeklyMap[weekKey].total += price;
@@ -3265,8 +3536,7 @@ function renderCharts() {
 
     const labels = dailyKeys.map(k => {
       const item = dailyMap[k];
-      const d = new Date(k + 'T12:00:00');
-      return `${fmtDate(d.getTime())} (${item.dow})`;
+      return `${fmtDate(getVNDayBounds(k).start + 43200000)} (${item.dow})`;
     });
     const revData = dailyKeys.map(k => dailyMap[k].total);
     const bgColors = dailyKeys.map(k => dailyMap[k].isWk ? 'rgba(251, 191, 36, 0.85)' : 'rgba(45, 212, 191, 0.45)');
@@ -3274,11 +3544,11 @@ function renderCharts() {
 
     // Tính toán đường trung bình trượt 7 ngày (MA7)
     const ma7Data = dailyKeys.map((k, i) => {
-      const currentTs = new Date(k + 'T12:00:00').getTime();
+      const currentTs = getVNDayBounds(k).start + 43200000;
       const start7Ts = currentTs - 6 * 86400000;
       let sum7 = 0;
       for (let j = 0; j <= i; j++) {
-        const dTs = new Date(dailyKeys[j] + 'T12:00:00').getTime();
+        const dTs = getVNDayBounds(dailyKeys[j]).start + 43200000;
         if (dTs >= start7Ts && dTs <= currentTs) {
           sum7 += dailyMap[dailyKeys[j]].total;
         }
@@ -3345,9 +3615,8 @@ function renderCharts() {
                 const k = dailyKeys[idx];
                 if (!k) return '';
                 const item = dailyMap[k];
-                const d = new Date(k + 'T12:00:00');
                 const badge = item.isWk ? '🔥 [CUỐI TUẦN: T7/CN]' : '💼 [NGÀY THƯỜNG: T2-T6]';
-                return `${item.dowFull}, ${fmtDate(d.getTime())} · ${badge}`;
+                return `${item.dowFull}, ${fmtDate(getVNDayBounds(k).start + 43200000)} · ${badge}`;
               },
               label: (c) => {
                 if (c.dataset.label && c.dataset.label.includes('MA7')) {
@@ -3601,7 +3870,7 @@ const custAllTimeRevenue = {};
 
 for (const o of D.orders) {
   if (o.deleted || o.status === 'CANCELLED') continue;
-  const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
+  const cid = getCanonicalCustKey(o);
   const ts = getOrderTs(o);
   if (!custAllTimeFirstTs[cid] || ts < custAllTimeFirstTs[cid]) {
     custAllTimeFirstTs[cid] = ts;
@@ -3623,7 +3892,7 @@ function renderRetentionSection() {
   let newOrdersRevenue = 0;
 
   for (const o of active) {
-    const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
+    const cid = getCanonicalCustKey(o);
     const price = o.totalPrice || 0;
     const ts = getOrderTs(o);
     totalPeriodRevenue += price;
@@ -3685,14 +3954,15 @@ function renderRetentionSection() {
 
   const trendBuckets = {};
   for (const o of active) {
-    const d = new Date(getOrderTs(o));
-    const cid = (o.customerPhone || o.customerId || (o.customerName || 'Không rõ').trim()).toLowerCase();
-    const key = isDailyTrend ? d.toISOString().slice(0, 10) : d.toISOString().slice(0, 7);
+    const t = getOrderTs(o);
+    const shifted = toVNShifted(t);
+    const cid = getCanonicalCustKey(o);
+    const key = isDailyTrend ? toVNDateKey(t) : toVNMonthKey(t);
     if (!trendBuckets[key]) {
-      const label = isDailyTrend ? fmtDate(d.getTime()) : `Tháng ${d.getMonth()+1}/${d.getFullYear()}`;
+      const label = isDailyTrend ? fmtDate(t) : `Tháng ${shifted.getUTCMonth()+1}/${shifted.getUTCFullYear()}`;
       trendBuckets[key] = { label, newCount: 0, repeatCount: 0, newRev: 0, repeatRev: 0 };
     }
-    const isRepeat = (custAllTimeFirstTs[cid] && getOrderTs(o) > custAllTimeFirstTs[cid]);
+    const isRepeat = (custAllTimeFirstTs[cid] && t > custAllTimeFirstTs[cid]);
     const price = o.totalPrice || 0;
     if (isRepeat) {
       trendBuckets[key].repeatCount++;
@@ -3992,10 +4262,9 @@ function renderHeatmap() {
   for (const o of active) {
     const t = getOrderTs(o);
     if (!t) continue;
-    const d = new Date(t);
-    const jsDow = d.getDay(); // 0=CN, 1=T2, ..., 6=T7
+    const jsDow = getVNDayOfWeek(t); // 0=CN, 1=T2, ..., 6=T7 (GMT+7)
     const rowIdx = jsDow === 0 ? 6 : jsDow - 1; // 0=T2, ..., 6=CN
-    const h = d.getHours();
+    const h = getVNHour(t);
     const price = o.totalPrice || 0;
 
     matrix[rowIdx][h].count += 1;
@@ -4195,6 +4464,8 @@ function renderBatchesFull() {
       <td class="text-right text-mono ${b.deletedCount?'money neg':'text-dim'}">${b.deletedCount||'—'}</td>
       <td class="text-right text-mono text-mist">${b.totalQty?b.totalQty.toLocaleString('vi-VN'):'—'}</td>
       <td class="text-right money">${fmt(b.revenue)}</td>
+      <td class="text-right money" style="color:var(--kelp)">${fmt(b.collected||0)}</td>
+      <td class="text-right money" style="color:var(--tide)">${fmt(b.profit||0)}</td>
       <td class="text-dim text-mono" style="font-size:11.5px">${b.firstDate?fmtDate(b.firstDate)+' → '+fmtDate(b.lastDate):'—'}</td>
     </tr>`).join('');
   document.getElementById('batches-empty').classList.toggle('hidden', rows.length > 0);
@@ -4241,7 +4512,10 @@ function openBatchDrawer(batchName) {
       <div class="drawer-row"><span>Đơn đã huỷ</span><span class="text-mono ${b.cancelled?'money neg':''}">${b.cancelled||0}</span></div>
       <div class="drawer-row"><span>Tổng SL hàng hoá</span><span class="text-mono">${(b.totalQty||0).toLocaleString('vi-VN')}</span></div>
       <div class="drawer-row"><span>Khoảng thời gian</span><span class="text-mono" style="font-size:11.5px">${b.firstDate?fmtDate(b.firstDate)+' → '+fmtDate(b.lastDate):'—'}</span></div>
-      <div class="drawer-row" style="border-bottom:none"><span>Doanh thu</span><span class="money">${fmt(b.revenue)}</span></div>
+      <div class="drawer-row"><span>Doanh thu ghi nhận</span><span class="money">${fmt(b.revenue)}</span></div>
+      <div class="drawer-row"><span>Thực thu (Đã XN)</span><span class="money" style="color:var(--kelp)">${fmt(b.collected||0)}</span></div>
+      <div class="drawer-row"><span>Phải thu / Công nợ</span><span class="money ${(b.receivable||0)>0?'neg':''}">${fmt(b.receivable||0)}</span></div>
+      <div class="drawer-row" style="border-bottom:none"><span>Lợi nhuận gộp</span><span class="money" style="color:var(--tide)">${fmt(b.profit||0)}</span></div>
     </div>
     <div class="drawer-section">
       <h4>Số lượng theo sản phẩm (${(b.products||[]).length})</h4>
@@ -4275,11 +4549,29 @@ function updateBatchDropdown() {
 }
 
 function paymentBadge(o) {
-  if (o.paymentMethod !== 'TRANSFER') return `<span class="text-mist">${PAY_VI[o.paymentMethod]||o.paymentMethod}</span>`;
-  if (!o.paymentVerifiedKnown) return `<span class="text-mist">Chuyển khoản</span>`;
-  return o.paymentVerified
-    ? `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ CK đã duyệt</span>`
-    : `<span class="badge" style="background:rgba(251,146,60,.12); color:var(--rust)">⏳ CK chưa duyệt</span>`;
+  const ps = derivePayStatus(o);
+  const pm = normMethod(o.paymentMethod);
+  const paid = getPaidAmt(o);
+  const total = Math.max(0, Math.round(Number(o.totalPrice || 0)));
+
+  if (ps === 'VERIFIED_BANK_AUTO') {
+    return `<span class="badge" style="background:rgba(45,212,191,.15); color:var(--current)">⚡ PayOS Auto</span>`;
+  }
+  if (ps === 'VERIFIED_MANUAL') {
+    return pm === 'TRANSFER'
+      ? `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ CK đã XN</span>`
+      : `<span class="badge" style="background:rgba(52,211,153,.12); color:var(--kelp)">✓ TM đã XN</span>`;
+  }
+  if (ps === 'PARTIALLY_PAID') {
+    return `<span class="badge" style="background:rgba(251,191,36,.14); color:var(--sand)">◐ Trả ${fmtK(paid)}/${fmtK(total)}</span>`;
+  }
+  if (ps === 'PENDING_TRANSFER') {
+    return `<span class="badge" style="background:rgba(251,146,60,.12); color:var(--rust)">⏳ Chờ CK</span>`;
+  }
+  if (ps === 'VOIDED') {
+    return `<span class="badge" style="background:rgba(251,113,133,.12); color:var(--coral)">🚫 Hoàn/Huỷ TT</span>`;
+  }
+  return `<span class="text-mist">💵 TM (Chưa XN)</span>`;
 }
 
 function renderOrders() {
@@ -4288,11 +4580,18 @@ function renderOrders() {
   let rows = currentFilteredOrders.filter(o => {
     if (status && o.status !== status) return false;
     if (batch && o.batchId !== batch) return false;
-    if (payment === 'TRANSFER_VERIFIED' && !(o.paymentMethod === 'TRANSFER' && o.paymentVerified)) return false;
-    if (payment === 'TRANSFER_UNVERIFIED' && !(o.paymentMethod === 'TRANSFER' && !o.paymentVerified)) return false;
-    if (payment === 'CASH' && o.paymentMethod !== 'CASH') return false;
+    const ps = derivePayStatus(o);
+    const pm = normMethod(o.paymentMethod);
+    const rem = ps === 'VOIDED' ? 0 : Math.max(0, Math.round(Number(o.totalPrice || 0)) - getPaidAmt(o));
+    if (payment === 'PAYOS_AUTO' && ps !== 'VERIFIED_BANK_AUTO') return false;
+    if (payment === 'TRANSFER_VERIFIED' && !(pm === 'TRANSFER' && (ps === 'VERIFIED_BANK_AUTO' || ps === 'VERIFIED_MANUAL'))) return false;
+    if (payment === 'TRANSFER_UNVERIFIED' && !(pm === 'TRANSFER' && (ps === 'PENDING_TRANSFER' || ps === 'PARTIALLY_PAID'))) return false;
+    if (payment === 'PARTIALLY_PAID' && ps !== 'PARTIALLY_PAID') return false;
+    if (payment === 'UNPAID_DEBT' && !(o.status !== 'CANCELLED' && ps !== 'VOIDED' && rem > 0)) return false;
+    if (payment === 'CASH' && pm !== 'CASH') return false;
+    if (payment === 'VOIDED' && ps !== 'VOIDED') return false;
     if (!ql) return true;
-    const hay = [o.id, o.customerName, o.address, o.batchId, o.customerPhone, ...(o.items||[]).map(i=>i.name)].join(' ').toLowerCase();
+    const hay = [o.id, o.customerName, o.orderCustomerName || '', o.address, o.batchId, o.customerPhone, ...(o.items||[]).map(i=>i.name)].join(' ').toLowerCase();
     return hay.includes(ql);
   });
 
@@ -4395,7 +4694,7 @@ function diffLabel(ev) {
   const label = ev.type === 'PRICE_CHANGED' ? esc(ev.fieldLabel) : esc(ev.fieldLabel || ev.field);
   const mapVal = v => ev.isMoney ? fmt(v)
     : (typeof v === 'boolean' ? BOOL_VI[v]
-    : (STATUS_VI[v] || PAY_VI[v] || esc(v) || '(trống)'));
+    : (STATUS_VI[v] || PAY_STATUS_VI[v] || PAY_VI[v] || esc(v) || '(trống)'));
   return `${label}: <span class="tl-from">${mapVal(ev.from)}</span> <span class="tl-arrow">→</span> <span class="tl-to">${mapVal(ev.to)}</span>`;
 }
 
@@ -4416,6 +4715,12 @@ function openOrderDrawer(id) {
       <div class="tl-content">${diffLabel(ev)}</div>
     </div>`).join('') : '<p class="text-dim" style="font-size:12.5px">Không có thay đổi nào được ghi nhận giữa các kỳ backup</p>';
 
+  const ps = derivePayStatus(o);
+  const paid = ps === 'VOIDED' ? 0 : getPaidAmt(o);
+  const rem = ps === 'VOIDED' ? 0 : Math.max(0, Math.round(Number(o.totalPrice || 0)) - paid);
+  const cost = getOrderCost(o);
+  const profit = Math.round(Number(o.totalPrice || 0)) - cost;
+
   document.getElementById('drawer-body').innerHTML = `
     ${o.deleted ? '<div class="drawer-section"><div class="insight-card" style="border-color:rgba(251,113,133,.3); background:rgba(251,113,133,.06)"><span class="insight-icon">🗑️</span><span class="insight-text" style="color:var(--coral)">Đơn này đã bị <b>xoá mềm</b> (deleteFlag=true) — không tính vào doanh thu, KPI hay số liệu lô hàng.</span></div></div>' : ''}
     <div class="drawer-section">
@@ -4426,8 +4731,12 @@ function openOrderDrawer(id) {
       <div class="drawer-row"><span>Lô hàng</span><span style="text-align:right; max-width:240px; font-size:11.5px" class="text-mist">${esc(o.batchId)}</span></div>
       <div class="drawer-row"><span>Trạng thái</span><span><span class="badge badge-${o.status}">${STATUS_VI[o.status]||o.status}</span></span></div>
       <div class="drawer-row"><span>Thanh toán</span><span>${paymentBadge(o)}</span></div>
+      ${o.bankTransactionRef ? `<div class="drawer-row"><span>Mã GD Ngân hàng</span><span class="text-mono" style="color:var(--current)">${esc(o.bankTransactionRef)}</span></div>` : ''}
       <div class="drawer-row"><span>Ngày tạo</span><span class="text-mono">${fmtDateTime(o.createdAt)}</span></div>
-      <div class="drawer-row" style="border-bottom:none"><span>Tổng tiền</span><span class="money">${fmt(o.totalPrice)}</span></div>
+      <div class="drawer-row"><span>Tổng tiền đơn</span><span class="money">${fmt(o.totalPrice)}</span></div>
+      <div class="drawer-row"><span>Đã thu (Thực thu)</span><span class="money" style="color:var(--kelp)">${fmt(paid)}</span></div>
+      <div class="drawer-row"><span>Còn phải thu</span><span class="money ${rem>0?'neg':''}">${fmt(rem)}</span></div>
+      <div class="drawer-row" style="border-bottom:none"><span>Giá vốn / Lợi nhuận</span><span class="text-mono">${fmt(cost)} / <b style="color:var(--tide)">${fmt(profit)}</b></span></div>
     </div>
     <div class="drawer-section">
       <h4>Sản phẩm</h4>
@@ -4491,20 +4800,22 @@ function renderReportView() {
   document.getElementById('report-period').textContent =
     `Kỳ báo cáo: ${currentRangeLabel} · Xuất dữ liệu lúc ${fmtDateTime(Date.now())}`;
 
-  const successRate = s.totalOrders ? ((s.delivered / s.totalOrders) * 100).toFixed(1) + '%' : '0%';
+  const collectRate = s.totalRevenue ? ((s.collectedRevenue / s.totalRevenue) * 100).toFixed(1) + '%' : '0%';
   document.getElementById('report-stats').innerHTML = [
-    { v: fmt(s.deliveredRevenue), l:'Doanh thu thực nhận' },
-    { v: s.totalOrders.toLocaleString('vi-VN'), l:'Tổng đơn hàng' },
-    { v: fmt(s.avgOrderValue), l:'Giá trị TB/đơn' },
-    { v: successRate, l:'Tỷ lệ giao thành công' },
+    { v: fmt(s.totalRevenue), l:'Doanh thu ghi nhận' },
+    { v: fmt(s.collectedRevenue), l:`Thực thu (${collectRate})` },
+    { v: fmt(s.receivableRevenue), l:'Phải thu / Công nợ' },
+    { v: fmt(s.grossProfit), l:`Lợi nhuận gộp (${s.profitMargin.toFixed(1)}%)` },
   ].map(st => `<div class="report-stat"><div class="v">${st.v}</div><div class="l">${st.l}</div></div>`).join('');
 
   // Financial table
   const totalBase = (s.totalRevenue || 1);
   const finRows = [
-    { label: '✅ Doanh thu thực nhận (Đã giao)', count: s.delivered, val: s.deliveredRevenue, cls: 'money' },
-    { label: '⏳ Doanh thu đang xử lý / luân chuyển', count: (s.pending + s.inTransit + s.pickedUp), val: s.pipelineRevenue, cls: 'text-mist text-mono' },
-    { label: '🏦 Chuyển khoản chưa xác nhận (Rủi ro)', count: s.transferUnverified, val: s.transferUnverifiedRevenue, cls: 'money neg' },
+    { label: '💰 Thực thu đã xác nhận (Collected)', count: (s.bankAutoCount + s.manualVerCount + s.partiallyPaidCount), val: s.collectedRevenue, cls: 'money' },
+    { label: '🏦 Phải thu / Công nợ chưa thu (Receivable)', count: (s.transferUnverified + s.cashUnpaidCount), val: s.receivableRevenue, cls: s.receivableRevenue > 0 ? 'money neg' : 'text-mist text-mono' },
+    { label: '⏳ Đơn đang xử lý / luân chuyển', count: (s.pending + s.inTransit + s.pickedUp), val: s.pipelineRevenue, cls: 'text-mist text-mono' },
+    { label: '📦 Giá vốn hàng bán (COGS)', count: s.activeOrdersCount, val: s.totalCost, cls: 'text-mist text-mono' },
+    { label: '💎 Lợi nhuận gộp ước tính', count: s.activeOrdersCount, val: s.grossProfit, cls: 'money' },
     { label: '❌ Doanh thu đơn đã huỷ trong kỳ', count: s.cancelled, val: s.cancelledRevenue, cls: 'money neg' }
   ];
   document.getElementById('report-financial-tbody').innerHTML = finRows.map(r => `
@@ -4516,31 +4827,55 @@ function renderReportView() {
     </tr>
   `).join('');
 
-  // Payment table
+  // Payment breakdown table (State machine aligned)
   const activeOrders = currentFilteredOrders.filter(o => o.status !== 'CANCELLED');
-  const transfer = activeOrders.filter(o => o.paymentMethod === 'TRANSFER');
-  const transferRev = transfer.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-  const transferVer = transfer.filter(o => o.paymentVerified === true);
-  const transferVerRev = transferVer.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-  const transferUnv = transfer.filter(o => o.paymentVerified !== true);
-  const transferUnvRev = transferUnv.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-  const cash = activeOrders.filter(o => o.paymentMethod === 'CASH');
-  const cashRev = cash.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-  const totalPayBase = (transferRev + cashRev) || 1;
+  const pendingTransfer = activeOrders.filter(o => derivePayStatus(o) === 'PENDING_TRANSFER');
+  const pendingTransferRev = pendingTransfer.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const totalPayBase = s.totalRevenue || 1;
 
   const payRows = [
-    { label: 'Chuyển khoản (Đã duyệt)', count: transferVer.length, val: transferVerRev, cls: 'money' },
-    { label: 'Chuyển khoản (Chưa duyệt)', count: transferUnv.length, val: transferUnvRev, cls: 'money neg' },
-    { label: 'Tiền mặt (CASH)', count: cash.length, val: cashRev, cls: 'text-mist text-mono' },
+    { label: '⚡ PayOS Tự động (VERIFIED_BANK_AUTO)', count: s.bankAutoCount, val: s.bankAutoRev, cls: 'money' },
+    { label: '✓ Xác nhận thủ công (VERIFIED_MANUAL)', count: s.manualVerCount, val: s.manualVerRev, cls: 'money' },
+    { label: '◐ Trả 1 phần (Đã thu / Còn nợ)', count: s.partiallyPaidCount, val: s.partiallyPaidPaid, extra: `nợ ${fmt(s.partiallyPaidRem)}`, cls: 'text-mist text-mono' },
+    { label: '⏳ Chuyển khoản chờ duyệt', count: pendingTransfer.length, val: pendingTransferRev, cls: 'money neg' },
+    { label: '💵 Tiền mặt chưa XN thu', count: s.cashUnpaidCount, val: s.cashUnpaidRev, cls: 'text-mist text-mono' },
+    { label: '🚫 Đã hoàn / hủy thanh toán (VOIDED)', count: s.voidedCount, val: s.voidedRev, cls: 'money neg' },
   ];
   document.getElementById('report-payment-tbody').innerHTML = payRows.map(r => `
     <tr>
-      <td>${r.label}</td>
+      <td>${r.label}${r.extra ? ` <span class="text-dim" style="font-size:11px">(${r.extra})</span>` : ''}</td>
       <td class="text-right text-mono">${r.count}</td>
       <td class="text-right ${r.cls}">${fmt(r.val)}</td>
       <td class="text-right text-mono text-dim">${((r.val / totalPayBase) * 100).toFixed(1)}%</td>
     </tr>
   `).join('');
+
+  // Ledger cashflow panel (payment_ledger)
+  const ledgerBody = document.getElementById('report-ledger-tbody');
+  const ledgerSub = document.getElementById('report-ledger-sub');
+  const ledgerData = D.ledger || { totalEntries: 0, netCollected: 0, totalReversal: 0, bySource: [] };
+  if (ledgerBody) {
+    const SRC_VI = {
+      PAYOS_WEBHOOK: '⚡ PayOS Webhook (Auto)',
+      WEB_UI: '💻 Thu ngân Web UI',
+      POS: '🛒 Bán tại quầy (POS)',
+      PAYMENT_AUDIT: '📋 Trang Đối soát công nợ',
+      TELEGRAM_BOT: '🤖 Telegram Bot',
+      MIGRATION: '🔄 Chuẩn hóa dữ liệu'
+    };
+    const lBase = (ledgerData.bySource || []).reduce((sum, x) => sum + Math.max(0, x.netAmount), 0) || 1;
+    if (ledgerSub) {
+      ledgerSub.textContent = `${ledgerData.totalEntries.toLocaleString('vi-VN')} bút toán · Ròng ${fmt(ledgerData.netCollected)}` + (ledgerData.totalReversal > 0 ? ` · Hoàn/Huỷ -${fmt(ledgerData.totalReversal)}` : '');
+    }
+    ledgerBody.innerHTML = (ledgerData.bySource || []).map(row => `
+      <tr>
+        <td>${SRC_VI[row.source] || esc(row.source)}</td>
+        <td class="text-right text-mono">${row.count.toLocaleString('vi-VN')}</td>
+        <td class="text-right ${row.netAmount < 0 ? 'money neg' : 'money'}">${fmt(row.netAmount)}</td>
+        <td class="text-right text-mono text-dim">${((Math.max(0, row.netAmount) / lBase) * 100).toFixed(1)}%</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="text-dim" style="text-align:center; padding:14px">Chưa có bút toán trong payment_ledger</td></tr>';
+  }
 
   // Report insights
   const insights = [];
@@ -4558,14 +4893,19 @@ function renderReportView() {
   if (s.transferUnverified > 0) {
     insights.push({
       icon: '🏦',
-      html: `Hiện có <b>${s.transferUnverified} đơn chuyển khoản chưa khớp sao kê</b> với tổng tiền <b>${fmt(s.transferUnverifiedRevenue)}</b>. Hãy đối soát với sao kê ngân hàng ngay.`
+      html: `Hiện có <b>${s.transferUnverified} đơn chuyển khoản chưa thu đủ</b> với công nợ <b>${fmt(s.transferUnverifiedRevenue)}</b>. Hãy đối soát với sao kê ngân hàng ngay.`
+    });
+  }
+  if (s.totalCost > 0) {
+    insights.push({
+      icon: '💎',
+      html: `Lợi nhuận gộp đạt <b>${fmt(s.grossProfit)}</b> trên doanh thu <b>${fmt(s.totalRevenue)}</b> (biên lợi nhuận <b>${s.profitMargin.toFixed(1)}%</b>).`
     });
   }
   if (currentFilteredCustomers.length > 0) {
     let repCust = 0;
     for (const c of currentFilteredCustomers) {
-      const cid = (c.phone || c.name || '').toLowerCase();
-      if ((custAllTimeOrderCount[cid] || 0) >= 2) repCust++;
+      if ((custAllTimeOrderCount[c.key] || 0) >= 2) repCust++;
     }
     const repPct = ((repCust / currentFilteredCustomers.length) * 100).toFixed(1);
     insights.push({
@@ -4601,9 +4941,14 @@ function exportToExcel() {
 
   // 1. Sheet Đơn hàng
   const ordersData = [
-    ['Mã đơn', 'Khách hàng', 'Số điện thoại', 'Địa chỉ', 'Lô hàng', 'Tổng tiền (VNĐ)', 'Trạng thái', 'Thanh toán', 'Xác nhận CK', 'Ngày tạo', 'Danh sách sản phẩm']
+    ['Mã đơn', 'Khách hàng', 'Số điện thoại', 'Địa chỉ', 'Lô hàng', 'Tổng tiền (VNĐ)', 'Đã thu (VNĐ)', 'Còn nợ (VNĐ)', 'Giá vốn (VNĐ)', 'Lợi nhuận gộp (VNĐ)', 'Trạng thái đơn', 'Phương thức', 'Trạng thái thanh toán', 'Mã GD NH', 'Ngày tạo', 'Danh sách sản phẩm']
   ];
   currentFilteredOrders.forEach(o => {
+    const ps = derivePayStatus(o);
+    const paid = ps === 'VOIDED' ? 0 : getPaidAmt(o);
+    const rem = ps === 'VOIDED' ? 0 : Math.max(0, Math.round(Number(o.totalPrice || 0)) - paid);
+    const cost = getOrderCost(o);
+    const profit = Math.round(Number(o.totalPrice || 0)) - cost;
     const itemsStr = (o.items || []).map(it => `${it.name} (x${it.qty})`).join(', ');
     ordersData.push([
       o.id,
@@ -4612,9 +4957,14 @@ function exportToExcel() {
       o.address,
       o.batchId,
       o.totalPrice,
+      paid,
+      rem,
+      cost,
+      profit,
       STATUS_VI[o.status] || o.status,
-      PAY_VI[o.paymentMethod] || o.paymentMethod,
-      o.paymentMethod === 'TRANSFER' ? (o.paymentVerified ? 'Đã duyệt' : 'Chưa duyệt') : '—',
+      PAY_VI[normMethod(o.paymentMethod)] || o.paymentMethod,
+      PAY_STATUS_VI[ps] || ps,
+      o.bankTransactionRef || '',
       fmtDateTime(o.createdAt),
       itemsStr
     ]);
@@ -4624,7 +4974,7 @@ function exportToExcel() {
 
   // 2. Sheet Doanh thu Lô hàng
   const batchesData = [
-    ['Tên lô hàng', 'Số đơn', 'Đơn huỷ', 'Đơn xoá mềm', 'Tổng SL hàng (kg/phần)', 'Doanh thu (VNĐ)', 'Thời gian']
+    ['Tên lô hàng', 'Số đơn', 'Đơn huỷ', 'Đơn xoá mềm', 'Tổng SL hàng (kg/phần)', 'Doanh thu ghi nhận (VNĐ)', 'Thực thu (VNĐ)', 'Còn nợ (VNĐ)', 'Giá vốn (VNĐ)', 'Lợi nhuận gộp (VNĐ)', 'Thời gian']
   ];
   currentFilteredBatches.forEach(b => {
     batchesData.push([
@@ -4634,6 +4984,10 @@ function exportToExcel() {
       b.deletedCount || 0,
       b.totalQty || 0,
       b.revenue,
+      b.collected || 0,
+      b.receivable || 0,
+      b.cost || 0,
+      b.profit || 0,
       b.firstDate ? `${fmtDate(b.firstDate)} → ${fmtDate(b.lastDate)}` : '—'
     ]);
   });
@@ -4642,7 +4996,7 @@ function exportToExcel() {
 
   // 3. Sheet Top Sản phẩm
   const productsData = [
-    ['Xếp hạng', 'Tên sản phẩm', 'Số lượng đã bán', 'Doanh thu (VNĐ)', 'Số đơn đặt']
+    ['Xếp hạng', 'Tên sản phẩm', 'Số lượng đã bán', 'Doanh thu (VNĐ)', 'Giá vốn (VNĐ)', 'Lợi nhuận gộp (VNĐ)', 'Số đơn đặt']
   ];
   currentFilteredProducts.forEach((p, idx) => {
     productsData.push([
@@ -4650,6 +5004,8 @@ function exportToExcel() {
       p.name,
       p.qty,
       p.revenue,
+      p.cost || 0,
+      p.profit || 0,
       p.orders
     ]);
   });
@@ -4658,7 +5014,7 @@ function exportToExcel() {
 
   // 4. Sheet Khách hàng thân thiết
   const customersData = [
-    ['Xếp hạng', 'Tên khách hàng', 'Số điện thoại', 'Số đơn hàng', 'Tổng chi tiêu (VNĐ)']
+    ['Xếp hạng', 'Tên khách hàng', 'Số điện thoại', 'Số đơn hàng', 'Tổng chi tiêu (VNĐ)', 'Đã thu (VNĐ)']
   ];
   currentFilteredCustomers.forEach((c, idx) => {
     customersData.push([
@@ -4666,13 +5022,13 @@ function exportToExcel() {
       c.name,
       c.phone || '',
       c.count,
-      c.revenue
+      c.revenue,
+      c.collected || 0
     ]);
   });
   const wsCustomers = XLSX.utils.aoa_to_sheet(customersData);
   XLSX.utils.book_append_sheet(wb, wsCustomers, 'KhachHangVIP');
 
-  // Tải file xuống
   const cleanLabel = currentRangeLabel.replace(/[^a-zA-Z0-9_-]/g, '_');
   const fileName = `BaoCao_EcoGo_${cleanLabel}.xlsx`;
   XLSX.writeFile(wb, fileName);
@@ -4734,7 +5090,7 @@ function exportCustomerCycleExcel() {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, 'KhachQuenTreHen');
-  XLSX.writeFile(wb, `EcoGo_CSKH_KhachTreHen_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, `EcoGo_CSKH_KhachTreHen_${toVNDateKey(Date.now())}.xlsx`);
 }
 
 /* ════════════════ CRM & REPURCHASE CYCLE ENGINE ════════════════ */
@@ -4749,24 +5105,16 @@ function initCustomerCycleAnalysis() {
   let maxOrderTs = 0;
 
   for (const o of activeAll) {
-    const rawPhone = (o.customerPhone || '').replace(/\D/g, '');
-    const validPhone = rawPhone.length >= 9 ? rawPhone : '';
+    const validPhone = normalizePhone(o.customerPhone);
     const rawName = (o.customerName || '').trim();
-    let cid = '';
-    if (validPhone) {
-      cid = 'p:' + validPhone;
-    } else if (rawName && rawName.toLowerCase() !== 'không rõ' && rawName.toLowerCase() !== 'khong ro') {
-      cid = 'n:' + rawName.toLowerCase();
-    } else {
-      cid = 'anon:' + (o.id || Math.random());
-    }
+    const cid = o.customerKey || (validPhone.length >= 9 ? 'p:' + validPhone : (rawName && rawName.toLowerCase() !== 'không rõ' && rawName.toLowerCase() !== 'khong ro' ? 'n:' + rawName.toLowerCase() : 'anon:' + (o.id || Math.random())));
 
     const ts = getOrderTs(o);
     if (ts > maxOrderTs) maxOrderTs = ts;
 
     if (!custMap[cid]) {
-      const displayName = rawName || (validPhone ? ('Khách ' + validPhone) : 'Khách lẻ');
-      const displayPhone = validPhone || (o.customerPhone || '').trim();
+      const displayName = rawName || (validPhone.length >= 9 ? ('Khách ' + validPhone) : 'Khách lẻ');
+      const displayPhone = validPhone.length >= 9 ? validPhone : (o.customerPhone || '').trim();
       custMap[cid] = {
         cid,
         name: displayName,
@@ -4919,12 +5267,11 @@ function initCustomerCycleAnalysis() {
   const p4Rev = p4Custs.reduce((s, c) => s + c.totalRev, 0);
   const aov = Math.round(totalShopRev / (activeAll.length || 1));
 
-  // Weekend calculation (Friday, Saturday, Sunday)
+  // Weekend calculation (Friday, Saturday, Sunday - GMT+7)
   let wkOrders = 0, wkRev = 0;
   for (const o of activeAll) {
     const ts = getOrderTs(o);
-    const d = new Date(ts);
-    const day = d.getDay(); // 0 is Sun, 5 is Fri, 6 is Sat
+    const day = getVNDayOfWeek(ts); // 0 is Sun, 5 is Fri, 6 is Sat
     if (day === 0 || day === 5 || day === 6) {
       wkOrders++;
       wkRev += (o.totalPrice || 0);
@@ -5355,8 +5702,9 @@ function openCustomerOrdersDrawer(cid) {
     }).join('');
 
     const statusVi = STATUS_VI[o.status] || o.status || 'Hoàn tất';
-    const address = o.deliveryAddress ? esc(o.deliveryAddress) : 'Tại cửa hàng / Không có địa chỉ';
-    const batch = o.batchName ? esc(o.batchName) : (o.note ? esc(o.note) : '—');
+    const rawAddr = o.address || o.deliveryAddress || '';
+    const address = rawAddr ? esc(rawAddr) : 'Tại cửa hàng / Không có địa chỉ';
+    const batch = (o.batchId || o.batchName) ? esc(o.batchId || o.batchName) : (o.note ? esc(o.note) : '—');
 
     ordersHtml += `
       <div class="crm-order-card">
@@ -5579,9 +5927,62 @@ if (btnGotoCrm) {
   });
 }
 
+// Expose inline HTML onclick handlers globally before initialization
+window.exportToExcel = exportToExcel;
+window.filterOrdersByBatch = filterOrdersByBatch;
+window.openOrderDrawer = openOrderDrawer;
+window.openCustomerOrdersDrawer = openCustomerOrdersDrawer;
+
 // Initialize dashboard with full dataset
 applyDateFilter('all');
 initCustomerCycleAnalysis();
+} // end initDashboard
+
+(async function bootstrapDashboard() {
+  if (!__PAYLOAD__ || !__PAYLOAD__.encrypted) {
+    initDashboard(__PAYLOAD__);
+    return;
+  }
+
+  const gateEl = document.getElementById('auth-gate');
+  const formEl = document.getElementById('auth-gate-form');
+  const pwdInput = document.getElementById('auth-password-input');
+  const errEl = document.getElementById('auth-error-msg');
+  const btnEl = document.getElementById('auth-unlock-btn');
+  const SESSION_KEY = 'ecogo_dash_pwd_' + (__PAYLOAD__.salt || '').slice(0, 8);
+
+  const tryUnlock = async (pwd) => {
+    btnEl.disabled = true;
+    errEl.textContent = '';
+    try {
+      const data = await decryptDashboardPayload(__PAYLOAD__, pwd);
+      try { sessionStorage.setItem(SESSION_KEY, pwd); } catch {}
+      gateEl.classList.add('hidden');
+      initDashboard(data);
+      return true;
+    } catch {
+      errEl.textContent = 'Mật khẩu không đúng hoặc dữ liệu bị lỗi.';
+      return false;
+    } finally {
+      btnEl.disabled = false;
+    }
+  };
+
+  try {
+    const savedPwd = sessionStorage.getItem(SESSION_KEY);
+    if (savedPwd && await tryUnlock(savedPwd)) return;
+  } catch {}
+
+  gateEl.classList.remove('hidden');
+  setTimeout(() => pwdInput && pwdInput.focus(), 50);
+  formEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ok = await tryUnlock(pwdInput.value);
+    if (!ok) {
+      pwdInput.select();
+    }
+  });
+})();
 </script>
 </body>
 </html>

@@ -5,6 +5,9 @@ node_modules/
 dist/
 backups/
 backup-*.json
+backup-*.json.gz
+backup-summary.json
+index.html
 
 # Archives
 *.zip
