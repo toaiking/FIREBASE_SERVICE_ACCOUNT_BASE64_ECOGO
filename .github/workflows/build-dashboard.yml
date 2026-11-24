@@ -9,6 +9,12 @@
 name: Build Order Dashboard
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/scripts/**"
+      - ".github/workflows/build-dashboard.yml"
   repository_dispatch:
     types:
       - "backup-completed"

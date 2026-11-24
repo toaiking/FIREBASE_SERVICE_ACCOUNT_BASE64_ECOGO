@@ -345,3 +345,114 @@ test("5. End-to-end buildDashboard (unencrypted + AES-256-GCM encrypted), Client
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test("6. Legacy orders with createdAt=0 / missing timestamps NEVER crash client dashboard rendering", () => {
+  const vm = require("node:vm");
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ecogo-zero-ts-"));
+  try {
+    const backupDir = path.join(tmpDir, "backups");
+    const distDir = path.join(tmpDir, "dist");
+    fs.mkdirSync(backupDir, { recursive: true });
+
+    const snap = {
+      _meta: { exportedDateVN: "2026-11-24" },
+      orders: [
+        {
+          id: "DH_LEGACY_ZERO",
+          customerName: "Khach Cu Khong Timestamp",
+          customerPhone: "0905556666",
+          address: "Dia chi cu",
+          batchId: "LO-CU",
+          totalPrice: 250000,
+          status: "DELIVERED",
+          paymentMethod: "CASH",
+          createdAt: 0,
+          updatedAt: 0,
+          items: [{ id: "1", name: "Cha ca", quantity: 1, price: 250000 }],
+        },
+        {
+          id: "DH_VALID",
+          customerName: "Khach Cu Khong Timestamp",
+          customerPhone: "0905556666",
+          address: "Dia chi cu",
+          batchId: "LO-MOI",
+          totalPrice: 300000,
+          status: "DELIVERED",
+          paymentMethod: "TRANSFER",
+          paymentVerified: true,
+          createdAt: Date.parse("2026-11-24T05:00:00.000Z"),
+          updatedAt: Date.parse("2026-11-24T05:00:00.000Z"),
+          items: [{ id: "2", name: "Cha ca", quantity: 1, price: 300000 }],
+        },
+      ],
+      customers: [],
+      products: [],
+      payment_ledger: [],
+    };
+
+    fs.writeFileSync(
+      path.join(backupDir, "backup-2026-11-24.json.gz"),
+      zlib.gzipSync(Buffer.from(JSON.stringify(snap), "utf8"))
+    );
+
+    const res = buildDashboard({ backupDir, distDir, password: "" });
+    assert.equal(res.dashData.orders.length, 2);
+
+    // Execute client dashboard script inside a lightweight mock DOM to confirm zero runtime crashes!
+    const html = fs.readFileSync(res.outHtmlPath, "utf8");
+    const scriptMatches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    const inlineJs = scriptMatches[scriptMatches.length - 1][1];
+
+    const elements = new Map();
+    const makeEl = (id) => {
+      if (elements.has(id)) return elements.get(id);
+      const el = {
+        id,
+        textContent: "",
+        innerHTML: "",
+        value: "",
+        style: {},
+        dataset: {},
+        options: [],
+        classList: { add() {}, remove() {}, toggle() {} },
+        addEventListener() {},
+        querySelectorAll() { return []; },
+        querySelector() { return null; },
+        focus() {},
+        select() {},
+      };
+      elements.set(id, el);
+      return el;
+    };
+
+    const sandbox = {
+      console,
+      Math, Date, Number, String, Boolean, Array, Object, Set, Map, JSON, RegExp, Intl, Error, Uint8Array,
+      TextEncoder, TextDecoder,
+      atob: (s) => Buffer.from(s, "base64").toString("binary"),
+      window: {},
+      document: {
+        getElementById: (id) => makeEl(id),
+        querySelectorAll: () => [],
+        querySelector: () => makeEl("mock-tab"),
+        addEventListener() {},
+      },
+      Chart: Object.assign(function MockChart() { this.destroy = () => {}; }, { defaults: { font: {} } }),
+      XLSX: undefined,
+      sessionStorage: { getItem: () => null, setItem() {} },
+      crypto: { subtle: {} },
+    };
+    sandbox.window = sandbox;
+
+    const consoleErrors = [];
+    sandbox.console = { ...console, error: (...args) => consoleErrors.push(args.map(String).join(" ")) };
+
+    vm.runInNewContext(inlineJs, sandbox);
+    assert.equal(consoleErrors.length, 0, "Expected 0 runtime console errors, got: " + consoleErrors.join("; "));
+    assert.ok(makeEl("orders-tbody").innerHTML.includes("DH_LEGACY_ZERO"), "Orders table must populate including DH_LEGACY_ZERO");
+    assert.ok(makeEl("customers-bars").innerHTML.includes("Khach Cu Khong Timestamp"), "Top customers must populate");
+    assert.ok(makeEl("batches-tbody").innerHTML.includes("LO-CU"), "Batches table must populate");
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});

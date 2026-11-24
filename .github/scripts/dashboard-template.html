@@ -3046,11 +3046,16 @@ const PAY_STATUS_VI = {
   VOIDED: 'Đã hoàn/hủy TT'
 };
 const esc = s => String(s==null?'—':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const getOrderTs = o => o.createdAt > 1e12 ? o.createdAt : o.createdAt * 1000;
+const getOrderTs = o => {
+  const raw = Number(o?.createdAt || o?.updatedAt || 0);
+  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  return raw > 1e12 ? raw : raw * 1000;
+};
 
 const toVNShifted = ts => {
+  if (!Number.isFinite(ts) || ts <= 0) return null;
   const ms = ts > 1e12 ? ts : ts * 1000;
-  return ms ? new Date(ms + VN_OFFSET_MS) : null;
+  return ms > 0 ? new Date(ms + VN_OFFSET_MS) : null;
 };
 const toVNDateKey = ts => {
   const d = toVNShifted(ts);
@@ -3377,16 +3382,20 @@ function applyDateFilter(key, customFrom, customTo) {
     products: Object.values(b.products).sort((x, y) => y.qty - x.qty)
   })).sort((a, b) => b.revenue - a.revenue);
 
-  renderKpis();
-  renderCharts();
-  renderHeatmap();
-  renderRetentionSection();
-  renderProductsBars();
-  renderCustomersBars();
-  renderBatchesOverview();
-  renderBatchesFull();
-  renderOrders();
-  renderReportView();
+  for (const [name, fn] of [
+    ['renderKpis', renderKpis],
+    ['renderCharts', renderCharts],
+    ['renderHeatmap', renderHeatmap],
+    ['renderRetentionSection', renderRetentionSection],
+    ['renderProductsBars', renderProductsBars],
+    ['renderCustomersBars', renderCustomersBars],
+    ['renderBatchesOverview', renderBatchesOverview],
+    ['renderBatchesFull', renderBatchesFull],
+    ['renderOrders', renderOrders],
+    ['renderReportView', renderReportView],
+  ]) {
+    try { fn(); } catch (err) { console.error(`[EcoGo] Error in ${name}:`, err); }
+  }
 }
 
 /* ════════════════ KPI CARDS ════════════════ */
@@ -3456,6 +3465,7 @@ function renderCharts() {
     const t = getOrderTs(o);
     if (!t) continue;
     const shifted = toVNShifted(t);
+    if (!shifted) continue;
     const dayOfWeek = shifted.getUTCDay(); // 0=CN, 6=T7 (GMT+7)
     const isWk = (dayOfWeek === 0 || dayOfWeek === 6);
     const price = o.totalPrice || 0;
@@ -3872,7 +3882,7 @@ for (const o of D.orders) {
   if (o.deleted || o.status === 'CANCELLED') continue;
   const cid = getCanonicalCustKey(o);
   const ts = getOrderTs(o);
-  if (!custAllTimeFirstTs[cid] || ts < custAllTimeFirstTs[cid]) {
+  if (ts > 0 && (!custAllTimeFirstTs[cid] || ts < custAllTimeFirstTs[cid])) {
     custAllTimeFirstTs[cid] = ts;
   }
   custAllTimeOrderCount[cid] = (custAllTimeOrderCount[cid] || 0) + 1;
@@ -3955,9 +3965,12 @@ function renderRetentionSection() {
   const trendBuckets = {};
   for (const o of active) {
     const t = getOrderTs(o);
+    if (!t) continue;
     const shifted = toVNShifted(t);
+    if (!shifted) continue;
     const cid = getCanonicalCustKey(o);
     const key = isDailyTrend ? toVNDateKey(t) : toVNMonthKey(t);
+    if (!key) continue;
     if (!trendBuckets[key]) {
       const label = isDailyTrend ? fmtDate(t) : `Tháng ${shifted.getUTCMonth()+1}/${shifted.getUTCFullYear()}`;
       trendBuckets[key] = { label, newCount: 0, repeatCount: 0, newRev: 0, repeatRev: 0 };
@@ -5147,13 +5160,17 @@ function initCustomerCycleAnalysis() {
 
     const intervals = [];
     for (let i = 1; i < count; i++) {
-      const diffDays = Math.round(((sortedOrders[i].ts - sortedOrders[i - 1].ts) / 86400000) * 10) / 10;
-      if (diffDays > 0) {
-        intervals.push(diffDays);
-        intervalsAll.push(diffDays);
-        sortedOrders[i].intervalDays = diffDays;
+      if (sortedOrders[i].ts > 0 && sortedOrders[i - 1].ts > 0) {
+        const diffDays = Math.round(((sortedOrders[i].ts - sortedOrders[i - 1].ts) / 86400000) * 10) / 10;
+        if (diffDays > 0) {
+          intervals.push(diffDays);
+          intervalsAll.push(diffDays);
+          sortedOrders[i].intervalDays = diffDays;
+        } else {
+          sortedOrders[i].intervalDays = 0;
+        }
       } else {
-        sortedOrders[i].intervalDays = 0;
+        sortedOrders[i].intervalDays = null;
       }
     }
     sortedOrders[0].intervalDays = null;
@@ -5271,6 +5288,7 @@ function initCustomerCycleAnalysis() {
   let wkOrders = 0, wkRev = 0;
   for (const o of activeAll) {
     const ts = getOrderTs(o);
+    if (!ts) continue;
     const day = getVNDayOfWeek(ts); // 0 is Sun, 5 is Fri, 6 is Sat
     if (day === 0 || day === 5 || day === 6) {
       wkOrders++;
